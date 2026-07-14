@@ -46,10 +46,6 @@ export default function AdminLoginPage() {
       <section className="admin-hero login-hero">
         <p className="eyebrow">Admin login</p>
         <h1>Sign in</h1>
-        <p>
-          Use a database-backed administrator account to manage CV files,
-          homepage content, and users.
-        </p>
       </section>
 
       <form className="admin-panel login-panel" onSubmit={submitLogin}>

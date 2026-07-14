@@ -90,6 +90,8 @@ test("keeps CV and admin upload routes wired", async () => {
   assert.match(adminPage, /Password changed successfully/);
   assert.match(adminPage, /At least 10 characters with uppercase, lowercase, number, and symbol/);
   assert.match(adminPage, /Visitor overview/);
+  assert.match(adminPage, /traffic-meter/);
+  assert.match(adminPage, /visitors/);
   assert.match(adminPage, /\/api\/admin\/analytics/);
   assert.match(adminPage, /\/api\/admin\/auth\/me/);
   assert.match(adminPage, /\/api\/admin\/auth\/logout/);
@@ -111,6 +113,8 @@ test("keeps CV and admin upload routes wired", async () => {
   assert.match(loginPage, /Show password/);
   assert.match(loginPage, /Hide password/);
   assert.match(loginPage, /password-toggle/);
+  assert.match(loginPage, /password-field/);
+  assert.doesNotMatch(loginPage, /Use a database-backed administrator account/);
   assert.doesNotMatch(loginPage, /Local first-use account|kanwu-admin|value="admin"/);
   assert.match(cvApi, /CV_BUCKET/);
   assert.match(adminApi, /requireAdminUser/);

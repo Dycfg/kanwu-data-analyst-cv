@@ -608,8 +608,11 @@ export default function AdminPage() {
           {(analytics?.daily.length ? analytics.daily : [{ date: "No data", views: 0, visitors: 0 }]).map((item) => (
             <div className="traffic-bar" key={item.date}>
               <span>{item.date.slice(5) || item.date}</span>
-              <i style={{ height: `${Math.max(8, (item.views / maxDailyViews(analytics)) * 100)}%` }} />
-              <b>{item.views}</b>
+              <div className="traffic-meter" aria-hidden="true">
+                <i style={{ width: `${Math.max(6, (item.views / maxDailyViews(analytics)) * 100)}%` }} />
+              </div>
+              <b>{item.views} views</b>
+              <em>{item.visitors} visitors</em>
             </div>
           ))}
         </div>

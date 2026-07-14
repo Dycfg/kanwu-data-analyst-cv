@@ -1054,15 +1054,16 @@ h3 {
   padding: 0 12px;
 }
 
-.password-field {
+.admin-key > .password-field {
   position: relative;
   display: block;
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
-  font-size: inherit;
+  font-size: 16px;
   text-transform: none;
 }
 
-.password-field input {
+.admin-key > .password-field input {
+  font-size: 16px;
   padding-right: 52px;
 }
 
@@ -1096,6 +1097,10 @@ h3 {
 .login-panel > .button {
   justify-self: start;
   margin-top: 6px;
+}
+
+.login-panel .admin-key input {
+  font-size: 16px;
 }
 
 .admin-panel code {
@@ -1351,33 +1356,48 @@ h3 {
 
 .traffic-chart {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(38px, 1fr));
-  gap: 10px;
-  min-height: 180px;
-  align-items: end;
-  padding: 18px 0 4px;
+  gap: 12px;
+  padding: 18px 0;
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
 }
 
 .traffic-bar {
   display: grid;
-  grid-template-rows: auto 120px auto;
-  gap: 8px;
-  align-items: end;
+  grid-template-columns: minmax(58px, 0.16fr) minmax(160px, 1fr) minmax(74px, auto) minmax(78px, auto);
+  gap: 12px;
+  align-items: center;
+  min-height: 44px;
+  padding: 4px 0;
+  animation: row-rise 520ms ease both;
 }
 
-.traffic-bar i {
+.traffic-meter {
+  position: relative;
   display: block;
   width: 100%;
-  border: 1px solid var(--ink);
-  background: repeating-linear-gradient(
-    180deg,
-    var(--ink) 0 2px,
-    transparent 2px 8px
-  );
-  transform-origin: bottom;
-  animation: bar-grow 560ms ease both;
+  height: 10px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--line) 52%, transparent) 1px, transparent 1px) 0 0 / 28px 100%,
+    color-mix(in srgb, var(--paper) 72%, white);
+}
+
+.traffic-meter i {
+  display: block;
+  height: 100%;
+  background: var(--ink);
+  transform-origin: left;
+  animation: meter-fill 760ms cubic-bezier(0.2, 0.72, 0.16, 1) both;
+}
+
+.traffic-bar em {
+  color: var(--muted);
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  font-style: normal;
+  text-transform: uppercase;
 }
 
 .analytics-lists {
@@ -1516,13 +1536,25 @@ h3 {
   }
 }
 
-@keyframes bar-grow {
+@keyframes meter-fill {
   from {
-    transform: scaleY(0.2);
+    transform: scaleX(0);
   }
 
   to {
-    transform: scaleY(1);
+    transform: scaleX(1);
+  }
+}
+
+@keyframes row-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -1600,6 +1632,15 @@ h3 {
   .paper-preview:hover,
   .paper-preview:focus-visible {
     transform: translateY(-3px);
+  }
+
+  .traffic-bar {
+    grid-template-columns: minmax(52px, 0.22fr) 1fr;
+  }
+
+  .traffic-bar b,
+  .traffic-bar em {
+    justify-self: start;
   }
 
   .cv-mini-preview {
