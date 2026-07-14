@@ -11,6 +11,8 @@ export type AnalyticsSummary = {
     cvViews: number;
   };
   daily: Array<{ date: string; views: number; visitors: number }>;
+  weekly: Array<{ date: string; views: number; visitors: number }>;
+  monthly: Array<{ date: string; views: number; visitors: number }>;
   topPages: Array<{ path: string; views: number }>;
   referrers: Array<{ referrer: string; views: number }>;
   devices: Array<{ device: string; views: number }>;
@@ -83,7 +85,7 @@ export async function readAnalyticsSummary(db: D1Database | undefined): Promise<
 
   await ensureAnalyticsTable(db);
 
-  const [views, today, last7Days, visitors, cvViews, daily, topPages, referrers, devices, browsers] =
+  const [views, today, last7Days, visitors, cvViews, daily, weekly, monthly, topPages, referrers, devices, browsers] =
     await Promise.all([
       count(db, "SELECT COUNT(*) AS count FROM traffic_events"),
       count(db, "SELECT COUNT(*) AS count FROM traffic_events WHERE date(created_at) = date('now')"),
@@ -96,6 +98,16 @@ export async function readAnalyticsSummary(db: D1Database | undefined): Promise<
       db
         .prepare(
           "SELECT date(created_at) AS date, COUNT(*) AS views, COUNT(DISTINCT visitor_hash) AS visitors FROM traffic_events WHERE created_at >= datetime('now', '-13 days') GROUP BY date(created_at) ORDER BY date(created_at) ASC"
+        )
+        .all<DailyRow>(),
+      db
+        .prepare(
+          "SELECT strftime('%Y-W%W', created_at) AS date, COUNT(*) AS views, COUNT(DISTINCT visitor_hash) AS visitors FROM traffic_events WHERE created_at >= datetime('now', '-84 days') GROUP BY strftime('%Y-W%W', created_at) ORDER BY date ASC"
+        )
+        .all<DailyRow>(),
+      db
+        .prepare(
+          "SELECT strftime('%Y-%m', created_at) AS date, COUNT(*) AS views, COUNT(DISTINCT visitor_hash) AS visitors FROM traffic_events WHERE created_at >= datetime('now', '-12 months') GROUP BY strftime('%Y-%m', created_at) ORDER BY date ASC"
         )
         .all<DailyRow>(),
       db
@@ -129,6 +141,8 @@ export async function readAnalyticsSummary(db: D1Database | undefined): Promise<
       cvViews,
     },
     daily: daily.results ?? [],
+    weekly: weekly.results ?? [],
+    monthly: monthly.results ?? [],
     topPages: mapLabelRows(topPages.results ?? [], "path"),
     referrers: mapLabelRows(referrers.results ?? [], "referrer"),
     devices: mapLabelRows(devices.results ?? [], "device"),
@@ -236,6 +250,8 @@ function emptySummary(): AnalyticsSummary {
       cvViews: 0,
     },
     daily: [],
+    weekly: [],
+    monthly: [],
     topPages: [],
     referrers: [],
     devices: [],

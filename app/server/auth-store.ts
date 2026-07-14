@@ -372,6 +372,10 @@ function validateUsername(username: string) {
 }
 
 function validatePassword(password: string) {
+  if (!password) {
+    throw new Error("Password is required.");
+  }
+
   if (password.length < 10) {
     throw new Error("Password must be at least 10 characters.");
   }

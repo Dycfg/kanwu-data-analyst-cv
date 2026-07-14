@@ -24,11 +24,15 @@ type AnalyticsSummary = {
     cvViews: number;
   };
   daily: Array<{ date: string; views: number; visitors: number }>;
+  weekly: Array<{ date: string; views: number; visitors: number }>;
+  monthly: Array<{ date: string; views: number; visitors: number }>;
   topPages: Array<{ path: string; views: number }>;
   referrers: Array<{ referrer: string; views: number }>;
   devices: Array<{ device: string; views: number }>;
   browsers: Array<{ browser: string; views: number }>;
 };
+
+type TrafficPeriod = "daily" | "weekly" | "monthly";
 
 const labels = {
   en: "English CV",
@@ -80,8 +84,20 @@ function isStrongPassword(value: string) {
   );
 }
 
-function maxDailyViews(analytics: AnalyticsSummary | null) {
-  return Math.max(1, ...(analytics?.daily.map((item) => item.views) ?? [0]));
+function maxTrafficViews(items: Array<{ views: number }>) {
+  return Math.max(1, ...(items.map((item) => item.views) ?? [0]));
+}
+
+function formatTrafficLabel(period: TrafficPeriod, value: string) {
+  if (period === "daily") {
+    return value.slice(5) || value;
+  }
+
+  if (period === "weekly") {
+    return value.replace("-W", " W");
+  }
+
+  return value;
 }
 
 export default function AdminPage() {
@@ -98,6 +114,7 @@ export default function AdminPage() {
   });
   const [status, setStatus] = useState<Status | null>(null);
   const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null);
+  const [trafficPeriod, setTrafficPeriod] = useState<TrafficPeriod>("daily");
   const [content, setContent] = useState<SiteContent>(defaultSiteContent);
   const [message, setMessage] = useState("");
   const [passwordMessage, setPasswordMessage] = useState("");
@@ -210,6 +227,18 @@ export default function AdminPage() {
     event.preventDefault();
     setBusy(true);
     setMessage("");
+
+    if (!newUser.password.trim()) {
+      setMessage("Password is required.");
+      setBusy(false);
+      return;
+    }
+
+    if (!isStrongPassword(newUser.password)) {
+      setMessage(passwordRule);
+      setBusy(false);
+      return;
+    }
 
     try {
       const response = await fetch("/api/admin/users", {
@@ -332,6 +361,12 @@ export default function AdminPage() {
       </main>
     );
   }
+
+  const trafficItems =
+    analytics?.[trafficPeriod].length
+      ? analytics[trafficPeriod]
+      : [{ date: "No data", views: 0, visitors: 0 }];
+  const trafficMax = maxTrafficViews(trafficItems);
 
   async function uploadCv(event: FormEvent<HTMLFormElement>, locale: "en" | "zh") {
     event.preventDefault();
@@ -604,12 +639,24 @@ export default function AdminPage() {
             <strong>{analytics?.totals.cvViews ?? 0}</strong>
           </article>
         </div>
-        <div className="traffic-chart" aria-label="Daily traffic">
-          {(analytics?.daily.length ? analytics.daily : [{ date: "No data", views: 0, visitors: 0 }]).map((item) => (
+        <div className="traffic-tabs" aria-label="Traffic range">
+          {(["daily", "weekly", "monthly"] as const).map((period) => (
+            <button
+              className={trafficPeriod === period ? "is-active" : ""}
+              key={period}
+              type="button"
+              onClick={() => setTrafficPeriod(period)}
+            >
+              {period === "daily" ? "Day" : period === "weekly" ? "Week" : "Month"}
+            </button>
+          ))}
+        </div>
+        <div className="traffic-chart" aria-label={`${trafficPeriod} traffic`}>
+          {trafficItems.map((item) => (
             <div className="traffic-bar" key={item.date}>
-              <span>{item.date.slice(5) || item.date}</span>
+              <span>{formatTrafficLabel(trafficPeriod, item.date)}</span>
               <div className="traffic-meter" aria-hidden="true">
-                <i style={{ width: `${Math.max(6, (item.views / maxDailyViews(analytics)) * 100)}%` }} />
+                <i style={{ width: `${Math.max(6, (item.views / trafficMax) * 100)}%` }} />
               </div>
               <b>{item.views} views</b>
               <em>{item.visitors} visitors</em>
@@ -664,7 +711,8 @@ export default function AdminPage() {
           <div className="editor-heading">
             <div>
               <p className="section-label">Users</p>
-              <h2>Administrator accounts</h2>
+              <h2>User directory</h2>
+              <p>Super administrators can view all administrator accounts and reset encrypted passwords.</p>
             </div>
           </div>
 
@@ -688,6 +736,7 @@ export default function AdminPage() {
                     setNewUser((current) => ({ ...current, password: event.target.value }))
                   }
                   type="password"
+                  required
                   placeholder="10+ chars, Aa, 0-9, symbol"
                 />
               </label>
@@ -715,6 +764,16 @@ export default function AdminPage() {
           <div className="user-list">
             {users.map((user) => (
               <article className="editor-card user-row" key={user.id}>
+                <div className="user-summary">
+                  <span>Account</span>
+                  <strong>{user.username}</strong>
+                  <em>{user.role === "super_admin" ? "Super administrator" : "Administrator"}</em>
+                </div>
+                <div className="password-state">
+                  <span>Password</span>
+                  <strong>Encrypted</strong>
+                  <em>Reset only</em>
+                </div>
                 <label>
                   <span>Username</span>
                   <input
