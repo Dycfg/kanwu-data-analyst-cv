@@ -33,6 +33,7 @@ type AnalyticsSummary = {
 };
 
 type TrafficPeriod = "daily" | "weekly" | "monthly";
+type TrafficItem = { date: string; views: number; visitors: number };
 
 const labels = {
   en: "English CV",
@@ -84,20 +85,139 @@ function isStrongPassword(value: string) {
   );
 }
 
-function maxTrafficViews(items: Array<{ views: number }>) {
-  return Math.max(1, ...(items.map((item) => item.views) ?? [0]));
-}
-
 function formatTrafficLabel(period: TrafficPeriod, value: string) {
   if (period === "daily") {
-    return value.slice(5) || value;
+    return /^\d{4}-\d{2}-\d{2}$/.test(value) ? value.slice(5) : value;
   }
 
   if (period === "weekly") {
-    return value.replace("-W", " W");
+    return /^\d{4}-W\d{2}$/.test(value) ? value.replace("-W", " W") : value;
   }
 
   return value;
+}
+
+function chartPoint(
+  index: number,
+  value: number,
+  itemCount: number,
+  maxValue: number,
+  width: number,
+  height: number,
+  padding: { top: number; right: number; bottom: number; left: number }
+) {
+  const innerWidth = width - padding.left - padding.right;
+  const innerHeight = height - padding.top - padding.bottom;
+  const x = padding.left + (itemCount <= 1 ? innerWidth / 2 : (index / (itemCount - 1)) * innerWidth);
+  const y = padding.top + innerHeight - (value / maxValue) * innerHeight;
+
+  return { x, y };
+}
+
+function TrafficVisualization({ period, items }: { period: TrafficPeriod; items: TrafficItem[] }) {
+  const [activeIndex, setActiveIndex] = useState(Math.max(0, items.length - 1));
+  const width = 760;
+  const height = 300;
+  const padding = { top: 28, right: 30, bottom: 42, left: 48 };
+  const maxValue = Math.max(1, ...items.flatMap((item) => [item.views, item.visitors]));
+  const safeActiveIndex = Math.min(activeIndex, Math.max(0, items.length - 1));
+  const activeItem = items[safeActiveIndex] ?? items[0] ?? { date: "No data", views: 0, visitors: 0 };
+  const points = items.map((item, index) => ({
+    item,
+    views: chartPoint(index, item.views, items.length, maxValue, width, height, padding),
+    visitors: chartPoint(index, item.visitors, items.length, maxValue, width, height, padding),
+  }));
+  const viewPath = points.map((point, index) => `${index === 0 ? "M" : "L"} ${point.views.x} ${point.views.y}`).join(" ");
+  const visitorPath = points
+    .map((point, index) => `${index === 0 ? "M" : "L"} ${point.visitors.x} ${point.visitors.y}`)
+    .join(" ");
+  const areaPath = points.length
+    ? `${viewPath} L ${points[points.length - 1].views.x} ${height - padding.bottom} L ${points[0].views.x} ${
+        height - padding.bottom
+      } Z`
+    : "";
+  const activePoint = points[safeActiveIndex]?.views ?? chartPoint(0, 0, 1, 1, width, height, padding);
+  const gridLines = [0, 0.25, 0.5, 0.75, 1];
+  const axisLabels = [items[0], items[Math.floor(items.length / 2)], items[items.length - 1]].filter(Boolean);
+
+  return (
+    <div className="traffic-visual" onMouseLeave={() => setActiveIndex(Math.max(0, items.length - 1))}>
+      <div className="traffic-visual-summary">
+        <div>
+          <p className="section-label">Selected point</p>
+          <strong>{formatTrafficLabel(period, activeItem.date)}</strong>
+        </div>
+        <dl>
+          <div>
+            <dt>Views</dt>
+            <dd>{activeItem.views}</dd>
+          </div>
+          <div>
+            <dt>Visitors</dt>
+            <dd>{activeItem.visitors}</dd>
+          </div>
+        </dl>
+      </div>
+      <svg className="traffic-svg" viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`${period} traffic chart`}>
+        <defs>
+          <linearGradient id={`traffic-fill-${period}`} x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stopColor="currentColor" stopOpacity="0.16" />
+            <stop offset="100%" stopColor="currentColor" stopOpacity="0.02" />
+          </linearGradient>
+        </defs>
+        {gridLines.map((line) => {
+          const y = padding.top + (height - padding.top - padding.bottom) * line;
+
+          return (
+            <line
+              className="traffic-grid-line"
+              key={line}
+              x1={padding.left}
+              x2={width - padding.right}
+              y1={y}
+              y2={y}
+            />
+          );
+        })}
+        <line
+          className="traffic-baseline"
+          x1={padding.left}
+          x2={width - padding.right}
+          y1={height - padding.bottom}
+          y2={height - padding.bottom}
+        />
+        {areaPath && <path className="traffic-area" d={areaPath} fill={`url(#traffic-fill-${period})`} />}
+        {visitorPath && <path className="traffic-line visitors-line" d={visitorPath} pathLength={1} />}
+        {viewPath && <path className="traffic-line views-line" d={viewPath} pathLength={1} />}
+        {points.map((point, index) => (
+          <g
+            aria-label={`${formatTrafficLabel(period, point.item.date)}: ${point.item.views} views, ${
+              point.item.visitors
+            } visitors`}
+            className={`traffic-point ${safeActiveIndex === index ? "is-active" : ""}`}
+            key={point.item.date}
+            role="button"
+            tabIndex={0}
+            onClick={() => setActiveIndex(index)}
+            onFocus={() => setActiveIndex(index)}
+            onMouseEnter={() => setActiveIndex(index)}
+          >
+            <circle cx={point.views.x} cy={point.views.y} r="15" />
+            <circle cx={point.views.x} cy={point.views.y} r="4.5" />
+          </g>
+        ))}
+        <g className="traffic-cursor">
+          <line x1={activePoint.x} x2={activePoint.x} y1={padding.top} y2={height - padding.bottom} />
+          <circle cx={activePoint.x} cy={activePoint.y} r="7" />
+        </g>
+      </svg>
+      <div className="traffic-axis-labels" aria-hidden="true">
+        {axisLabels.map((item, index) => (
+          <span key={`${item.date}-${index}`}>{formatTrafficLabel(period, item.date)}</span>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export default function AdminPage() {
@@ -366,7 +486,6 @@ export default function AdminPage() {
     analytics?.[trafficPeriod].length
       ? analytics[trafficPeriod]
       : [{ date: "No data", views: 0, visitors: 0 }];
-  const trafficMax = maxTrafficViews(trafficItems);
 
   async function uploadCv(event: FormEvent<HTMLFormElement>, locale: "en" | "zh") {
     event.preventDefault();
@@ -651,18 +770,7 @@ export default function AdminPage() {
             </button>
           ))}
         </div>
-        <div className="traffic-chart" aria-label={`${trafficPeriod} traffic`}>
-          {trafficItems.map((item) => (
-            <div className="traffic-bar" key={item.date}>
-              <span>{formatTrafficLabel(trafficPeriod, item.date)}</span>
-              <div className="traffic-meter" aria-hidden="true">
-                <i style={{ width: `${Math.max(6, (item.views / trafficMax) * 100)}%` }} />
-              </div>
-              <b>{item.views} views</b>
-              <em>{item.visitors} visitors</em>
-            </div>
-          ))}
-        </div>
+        <TrafficVisualization period={trafficPeriod} items={trafficItems} />
         <div className="analytics-lists">
           <div>
             <p className="section-label">Top pages</p>

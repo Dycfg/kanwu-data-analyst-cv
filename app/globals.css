@@ -1377,8 +1377,6 @@ h3 {
 }
 
 .metric-grid span,
-.traffic-bar span,
-.traffic-bar b,
 .analytics-lists .section-label {
   color: var(--muted);
   font-family: var(--font-mono), monospace;
@@ -1424,49 +1422,155 @@ h3 {
   color: var(--reverse);
 }
 
-.traffic-chart {
-  display: grid;
-  gap: 12px;
-  padding: 18px 0;
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-}
-
-.traffic-bar {
-  display: grid;
-  grid-template-columns: minmax(58px, 0.16fr) minmax(160px, 1fr) minmax(74px, auto) minmax(78px, auto);
-  gap: 12px;
-  align-items: center;
-  min-height: 44px;
-  padding: 4px 0;
-  animation: row-rise 520ms ease both;
-}
-
-.traffic-meter {
+.traffic-visual {
   position: relative;
-  display: block;
-  width: 100%;
-  height: 10px;
+  display: grid;
+  gap: 14px;
+  padding: 18px;
   overflow: hidden;
   border: 1px solid var(--line);
   background:
-    linear-gradient(90deg, color-mix(in srgb, var(--line) 52%, transparent) 1px, transparent 1px) 0 0 / 28px 100%,
-    color-mix(in srgb, var(--paper) 72%, white);
+    linear-gradient(90deg, color-mix(in srgb, var(--line) 38%, transparent) 1px, transparent 1px) 0 0 / 64px 100%,
+    linear-gradient(180deg, color-mix(in srgb, var(--paper) 82%, white), var(--paper));
 }
 
-.traffic-meter i {
+.traffic-visual::before {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at 72% 16%, color-mix(in srgb, var(--ink) 6%, transparent), transparent 32%);
+  content: "";
+}
+
+.traffic-visual-summary {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.traffic-visual-summary strong {
   display: block;
-  height: 100%;
-  background: var(--ink);
-  transform-origin: left;
-  animation: meter-fill 760ms cubic-bezier(0.2, 0.72, 0.16, 1) both;
+  margin-top: 4px;
+  font-size: clamp(22px, 3vw, 38px);
+  line-height: 0.95;
 }
 
-.traffic-bar em {
+.traffic-visual-summary dl {
+  display: flex;
+  gap: 10px;
+  margin: 0;
+}
+
+.traffic-visual-summary dl div {
+  min-width: 108px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--paper) 76%, white);
+}
+
+.traffic-visual-summary dt {
   color: var(--muted);
   font-family: var(--font-mono), monospace;
   font-size: 11px;
-  font-style: normal;
+  text-transform: uppercase;
+}
+
+.traffic-visual-summary dd {
+  margin: 8px 0 0;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 0.95;
+}
+
+.traffic-svg {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: auto;
+  min-height: 220px;
+  color: var(--ink);
+}
+
+.traffic-grid-line,
+.traffic-baseline {
+  stroke: color-mix(in srgb, var(--line) 78%, transparent);
+  stroke-width: 1;
+}
+
+.traffic-area {
+  color: var(--ink);
+}
+
+.traffic-line {
+  fill: none;
+  stroke: var(--ink);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.4;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  animation: chart-draw 880ms cubic-bezier(0.2, 0.72, 0.16, 1) both;
+}
+
+.visitors-line {
+  opacity: 0.42;
+  stroke-dasharray: 7 7;
+  stroke-width: 1.8;
+}
+
+.traffic-point {
+  cursor: pointer;
+  outline: none;
+}
+
+.traffic-point circle:first-child {
+  fill: transparent;
+}
+
+.traffic-point circle:last-child {
+  fill: var(--paper);
+  stroke: var(--ink);
+  stroke-width: 2;
+  transition:
+    fill 160ms ease,
+    r 160ms ease;
+}
+
+.traffic-point:hover circle:last-child,
+.traffic-point:focus-visible circle:last-child,
+.traffic-point.is-active circle:last-child {
+  fill: var(--ink);
+  r: 6.5;
+}
+
+.traffic-cursor {
+  pointer-events: none;
+}
+
+.traffic-cursor line {
+  stroke: color-mix(in srgb, var(--ink) 32%, transparent);
+  stroke-dasharray: 4 6;
+}
+
+.traffic-cursor circle {
+  fill: var(--paper);
+  stroke: var(--ink);
+  stroke-width: 2;
+}
+
+.traffic-axis-labels {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted);
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
   text-transform: uppercase;
 }
 
@@ -1704,13 +1808,22 @@ h3 {
     transform: translateY(-3px);
   }
 
-  .traffic-bar {
-    grid-template-columns: minmax(52px, 0.22fr) 1fr;
+  .traffic-visual-summary {
+    align-items: start;
+    flex-direction: column;
   }
 
-  .traffic-bar b,
-  .traffic-bar em {
-    justify-self: start;
+  .traffic-visual-summary dl {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .traffic-visual-summary dl div {
+    flex: 1 1 132px;
+  }
+
+  .traffic-svg {
+    min-height: 180px;
   }
 
   .cv-mini-preview {

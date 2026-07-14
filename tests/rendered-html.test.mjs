@@ -96,7 +96,11 @@ test("keeps CV and admin upload routes wired", async () => {
   assert.match(adminPage, /Day/);
   assert.match(adminPage, /Week/);
   assert.match(adminPage, /Month/);
-  assert.match(adminPage, /traffic-meter/);
+  assert.match(adminPage, /TrafficVisualization/);
+  assert.match(adminPage, /traffic-visual/);
+  assert.match(adminPage, /traffic-svg/);
+  assert.match(adminPage, /Selected point/);
+  assert.match(adminPage, /onMouseEnter/);
   assert.match(adminPage, /visitors/);
   assert.match(adminPage, /\/api\/admin\/analytics/);
   assert.match(adminPage, /\/api\/admin\/auth\/me/);
