@@ -1,0 +1,634 @@
+@import "tailwindcss";
+
+:root {
+  --paper: #f7f7f4;
+  --ink: #111111;
+  --muted: #62625f;
+  --quiet: #d8d8d2;
+  --line: #c9c9c2;
+  --reverse: #ffffff;
+  --panel: #ededE8;
+  --charcoal: #191918;
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  letter-spacing: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  color: inherit;
+}
+
+::selection {
+  background: var(--ink);
+  color: var(--reverse);
+}
+
+.site-shell,
+.cv-page,
+.admin-page {
+  width: min(1160px, calc(100vw - 32px));
+  margin: 0 auto;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 24px;
+  align-items: center;
+  min-height: 68px;
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  backdrop-filter: blur(16px);
+}
+
+.brandmark {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 1px solid var(--ink);
+  border-radius: 50%;
+  font-family: var(--font-mono), monospace;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.main-nav {
+  display: flex;
+  justify-content: center;
+  gap: clamp(12px, 2vw, 28px);
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.main-nav a,
+.subpage-header a,
+.contact-list a {
+  transition: color 160ms ease;
+}
+
+.main-nav a:hover,
+.subpage-header a:hover,
+.contact-list a:hover {
+  color: var(--ink);
+}
+
+.language-toggle {
+  min-width: 62px;
+  min-height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
+}
+
+.language-toggle:hover {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--reverse);
+}
+
+.section-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(260px, 0.55fr);
+  gap: clamp(32px, 7vw, 96px);
+  align-items: start;
+}
+
+.hero {
+  min-height: calc(100vh - 68px);
+  padding: clamp(64px, 10vw, 132px) 0 48px;
+  border-bottom: 1px solid var(--line);
+}
+
+.eyebrow,
+.section-label,
+.analysis-card dt,
+.line-card p,
+.project-card span,
+.upload-card span {
+  margin: 0;
+  color: var(--muted);
+  font-family: var(--font-mono), monospace;
+  font-size: 12px;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  max-width: 11ch;
+  margin-bottom: 28px;
+  font-size: clamp(64px, 13vw, 176px);
+  font-weight: 520;
+  line-height: 0.86;
+}
+
+h2 {
+  max-width: 760px;
+  margin-bottom: 0;
+  font-size: clamp(28px, 5vw, 64px);
+  font-weight: 520;
+  line-height: 0.98;
+}
+
+h3 {
+  margin-bottom: 16px;
+  font-size: 22px;
+  font-weight: 560;
+  line-height: 1.08;
+}
+
+.hero-tagline {
+  max-width: 760px;
+  margin-bottom: 20px;
+  font-size: clamp(22px, 3.4vw, 42px);
+  line-height: 1.05;
+}
+
+.hero-intro,
+.section-heading p,
+.prose-stack p,
+.project-card p,
+.cv-copy p,
+.admin-hero p,
+.admin-panel p,
+.line-card span,
+.contact-band h2 {
+  color: var(--muted);
+  font-size: 17px;
+  line-height: 1.65;
+}
+
+.hero-intro {
+  max-width: 720px;
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+.button,
+.social-strip a,
+.social-strip span,
+.social-strip button,
+.contact-list button,
+.upload-card button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid var(--ink);
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+  transition:
+    transform 160ms ease,
+    background 160ms ease,
+    color 160ms ease,
+    border-color 160ms ease;
+}
+
+.button:hover,
+.social-strip a:hover,
+.social-strip button:hover,
+.contact-list button:hover,
+.upload-card button:hover {
+  transform: translateY(-2px);
+}
+
+.button.primary {
+  background: var(--ink);
+  color: var(--reverse);
+}
+
+.button.secondary:hover,
+.social-strip a:hover,
+.social-strip button:hover,
+.contact-list button:hover {
+  background: var(--ink);
+  color: var(--reverse);
+}
+
+.analysis-card {
+  position: sticky;
+  top: 108px;
+  min-height: 420px;
+  padding: 28px;
+  border: 1px solid var(--line);
+  background:
+    linear-gradient(var(--line), var(--line)) 28px 28px / 1px calc(100% - 56px) no-repeat,
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 47px,
+      color-mix(in srgb, var(--line) 45%, transparent) 48px
+    );
+}
+
+.axis-line {
+  width: 100%;
+  height: 180px;
+  margin-bottom: 34px;
+  border-left: 1px solid var(--ink);
+  border-bottom: 1px solid var(--ink);
+  background:
+    linear-gradient(135deg, transparent 48%, var(--ink) 49%, var(--ink) 51%, transparent 52%),
+    radial-gradient(circle at 72% 28%, var(--ink) 0 4px, transparent 5px);
+}
+
+.analysis-card dl {
+  display: grid;
+  gap: 24px;
+  margin: 0;
+}
+
+.analysis-card dd {
+  margin: 4px 0 0;
+  font-size: 18px;
+}
+
+.social-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 28px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.social-strip span {
+  border-color: var(--quiet);
+  color: var(--muted);
+  cursor: default;
+}
+
+.content-section {
+  padding: clamp(64px, 10vw, 118px) 0;
+  border-bottom: 1px solid var(--line);
+  scroll-margin-top: 96px;
+}
+
+.section-heading {
+  max-width: 800px;
+  margin-bottom: 36px;
+}
+
+.section-heading h2 {
+  margin: 8px 0 18px;
+}
+
+.prose-stack {
+  display: grid;
+  gap: 18px;
+}
+
+.prose-stack p {
+  margin-bottom: 0;
+}
+
+.experience-grid,
+.project-grid,
+.upload-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.line-card,
+.project-card,
+.upload-card,
+.admin-panel,
+.admin-roadmap {
+  min-height: 230px;
+  padding: 24px;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--paper) 72%, white);
+}
+
+.line-card p {
+  margin-bottom: 64px;
+}
+
+.skills-list,
+.contact-list,
+.admin-roadmap {
+  display: grid;
+  gap: 12px;
+}
+
+.skill-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.34fr) 1fr;
+  gap: 18px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.skill-row strong {
+  font-weight: 560;
+}
+
+.skill-row span {
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.project-card {
+  min-height: 260px;
+}
+
+.project-card span {
+  display: inline-flex;
+  margin-bottom: 56px;
+}
+
+.cv-band {
+  align-items: center;
+}
+
+.contact-list a,
+.contact-list button {
+  justify-self: start;
+}
+
+.subpage-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 76px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.cv-layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.45fr) minmax(0, 1fr);
+  gap: clamp(24px, 6vw, 72px);
+  padding: clamp(40px, 8vw, 88px) 0;
+}
+
+.cv-copy {
+  position: sticky;
+  top: 36px;
+  align-self: start;
+}
+
+.cv-copy h1,
+.admin-hero h1 {
+  max-width: 7ch;
+  margin: 12px 0 24px;
+  font-size: clamp(58px, 10vw, 120px);
+}
+
+.pdf-frame {
+  position: relative;
+  min-height: 78vh;
+  border: 1px solid var(--line);
+  background: white;
+}
+
+.pdf-frame iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.pdf-placeholder {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 32px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.admin-page {
+  padding-bottom: 80px;
+}
+
+.admin-hero {
+  max-width: 860px;
+  padding: clamp(48px, 8vw, 96px) 0 44px;
+}
+
+.admin-hero h1 {
+  max-width: 9ch;
+}
+
+.admin-panel {
+  min-height: 0;
+  margin-bottom: 18px;
+}
+
+.admin-key {
+  display: grid;
+  gap: 10px;
+}
+
+.admin-key span {
+  font-family: var(--font-mono), monospace;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.admin-key input,
+.upload-card input {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 0;
+  background: var(--paper);
+  padding: 0 12px;
+}
+
+.admin-panel code {
+  font-family: var(--font-mono), monospace;
+}
+
+.upload-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.upload-card {
+  display: grid;
+  gap: 18px;
+  min-height: 270px;
+}
+
+.upload-card strong {
+  display: block;
+  margin: 16px 0 8px;
+  font-size: 28px;
+  font-weight: 520;
+}
+
+.upload-card p {
+  color: var(--muted);
+}
+
+.admin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.upload-card button:disabled {
+  opacity: 0.55;
+  cursor: progress;
+}
+
+.admin-message {
+  padding: 18px 0;
+  color: var(--muted);
+}
+
+.admin-roadmap {
+  margin-top: 48px;
+}
+
+.admin-roadmap .section-label {
+  margin-bottom: 18px;
+}
+
+.reveal {
+  animation: rise-in 620ms ease both;
+}
+
+.reveal:nth-child(2) {
+  animation-delay: 110ms;
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+@media (max-width: 860px) {
+  .site-shell,
+  .cv-page,
+  .admin-page {
+    width: min(100vw - 24px, 720px);
+  }
+
+  .topbar {
+    grid-template-columns: auto auto;
+    gap: 12px;
+    padding: 10px 0;
+  }
+
+  .main-nav {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+
+  .section-grid,
+  .cv-layout,
+  .experience-grid,
+  .project-grid,
+  .upload-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hero {
+    min-height: auto;
+  }
+
+  .analysis-card,
+  .cv-copy {
+    position: static;
+  }
+
+  .analysis-card {
+    min-height: 340px;
+  }
+
+  .skill-row {
+    grid-template-columns: 1fr;
+  }
+
+  .pdf-frame {
+    min-height: 68vh;
+  }
+}
+
+@media (max-width: 520px) {
+  h1 {
+    font-size: 58px;
+  }
+
+  .hero-tagline {
+    font-size: 24px;
+  }
+
+  .button,
+  .social-strip a,
+  .social-strip span,
+  .social-strip button {
+    width: 100%;
+  }
+}
