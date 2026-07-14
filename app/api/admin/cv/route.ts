@@ -1,11 +1,13 @@
 import { env } from "cloudflare:workers";
 import { requireAdminUser, type AuthRuntimeEnv } from "../../../server/auth-store";
+import { writeAuditLog, type AuditRuntimeEnv } from "../../../server/audit-log-store";
 
 type Locale = "en" | "zh";
 
 type RuntimeEnv = {
   CV_BUCKET?: R2Bucket;
-} & AuthRuntimeEnv;
+} & AuthRuntimeEnv &
+  AuditRuntimeEnv;
 
 const maxPdfSize = 12 * 1024 * 1024;
 
@@ -104,6 +106,13 @@ export async function POST(request: Request) {
       originalName: file.name,
     },
   });
+  await writeAuditLog(runtimeEnv().DB, {
+    actor: auth.user,
+    action: "cv.uploaded",
+    targetType: "cv",
+    targetLabel: fileByLocale[locale].label,
+    details: `${file.name} (${file.size} bytes)`,
+  });
 
   return Response.json({
     message: `${fileByLocale[locale].label} uploaded.`,
@@ -136,6 +145,12 @@ export async function DELETE(request: Request) {
   }
 
   await bucket.delete(fileByLocale[locale].key);
+  await writeAuditLog(runtimeEnv().DB, {
+    actor: auth.user,
+    action: "cv.removed",
+    targetType: "cv",
+    targetLabel: fileByLocale[locale].label,
+  });
 
   return Response.json({
     message: `${fileByLocale[locale].label} removed.`,

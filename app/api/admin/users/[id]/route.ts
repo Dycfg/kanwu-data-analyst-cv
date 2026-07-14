@@ -6,9 +6,12 @@ import {
   type AdminRole,
   type AuthRuntimeEnv,
 } from "../../../../server/auth-store";
+import { writeAuditLog, type AuditRuntimeEnv } from "../../../../server/audit-log-store";
+
+type RuntimeEnv = AuthRuntimeEnv & AuditRuntimeEnv;
 
 function runtimeEnv() {
-  return env as unknown as AuthRuntimeEnv;
+  return env as unknown as RuntimeEnv;
 }
 
 export async function PATCH(request: Request, context: { params: { id: string } }) {
@@ -40,6 +43,16 @@ export async function PATCH(request: Request, context: { params: { id: string } 
     if (!user) {
       return Response.json({ error: "User not found." }, { status: 404 });
     }
+    await writeAuditLog(db, {
+      actor: auth.user,
+      action: "user.updated",
+      targetType: "admin_user",
+      targetId: user.id,
+      targetLabel: user.username,
+      details: [payload.username ? "username" : "", payload.role ? "role" : "", payload.password ? "password" : ""]
+        .filter(Boolean)
+        .join(", "),
+    });
 
     return Response.json({ user, message: "User updated." });
   } catch (error) {
@@ -73,6 +86,13 @@ export async function DELETE(request: Request, context: { params: { id: string }
     if (!deleted) {
       return Response.json({ error: "User not found." }, { status: 404 });
     }
+    await writeAuditLog(db, {
+      actor: auth.user,
+      action: "user.deleted",
+      targetType: "admin_user",
+      targetId: context.params.id,
+      targetLabel: context.params.id,
+    });
 
     return Response.json({ message: "User deleted." });
   } catch (error) {

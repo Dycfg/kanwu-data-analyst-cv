@@ -22,6 +22,8 @@ type AnalyticsSummary = {
     last7Days: number;
     visitors: number;
     cvViews: number;
+    cvDownloads: number;
+    contactClicks: number;
   };
   daily: Array<{ date: string; views: number; visitors: number }>;
   weekly: Array<{ date: string; views: number; visitors: number }>;
@@ -30,11 +32,21 @@ type AnalyticsSummary = {
   referrers: Array<{ referrer: string; views: number }>;
   devices: Array<{ device: string; views: number }>;
   browsers: Array<{ browser: string; views: number }>;
+  countries: Array<{ country: string; views: number }>;
 };
 
 type TrafficPeriod = "daily" | "weekly" | "monthly";
 type TrafficItem = { date: string; views: number; visitors: number };
 type InsightItem = { label: string; views: number };
+type AuditLog = {
+  id: string;
+  actorUsername: string;
+  action: string;
+  targetType: string;
+  targetLabel: string;
+  details: string | null;
+  createdAt: string;
+};
 type DraftedAdminUser = AdminUser & {
   newPassword?: string;
   usernameDraft?: string;
@@ -301,6 +313,7 @@ export default function AdminPage() {
   });
   const [status, setStatus] = useState<Status | null>(null);
   const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [trafficPeriod, setTrafficPeriod] = useState<TrafficPeriod>("daily");
   const [content, setContent] = useState<SiteContent>(defaultSiteContent);
   const [message, setMessage] = useState("");
@@ -357,6 +370,12 @@ export default function AdminPage() {
     setAnalytics(payload);
   }
 
+  async function refreshAuditLogs() {
+    const response = await fetch("/api/admin/audit-logs", { cache: "no-store" });
+    const payload = await readJson<{ logs: AuditLog[] }>(response);
+    setAuditLogs(payload.logs);
+  }
+
   useEffect(() => {
     refreshMe()
       .then((user) =>
@@ -364,7 +383,7 @@ export default function AdminPage() {
           refreshStatus(),
           refreshContent(),
           refreshAnalytics(),
-          user.role === "super_admin" ? refreshUsers() : Promise.resolve(),
+          user.role === "super_admin" ? Promise.all([refreshUsers(), refreshAuditLogs()]) : Promise.resolve(),
         ])
       )
       .catch((error) => {
@@ -442,6 +461,7 @@ export default function AdminPage() {
       setNewUser({ username: "", password: "", role: "admin" });
       setMessage(payload.message ?? "User created.");
       await refreshUsers();
+      await refreshAuditLogs();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "User creation failed.");
     } finally {
@@ -475,6 +495,7 @@ export default function AdminPage() {
 
       setMessage(payload.message ?? "User updated.");
       await refreshUsers();
+      await refreshAuditLogs();
       await refreshMe();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "User update failed.");
@@ -501,6 +522,7 @@ export default function AdminPage() {
 
       setMessage(payload.message ?? "User deleted.");
       await refreshUsers();
+      await refreshAuditLogs();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "User deletion failed.");
     } finally {
@@ -601,6 +623,12 @@ export default function AdminPage() {
         ? analytics.browsers.map((item) => ({ label: item.browser, views: item.views }))
         : [{ label: "No data", views: 0 }],
     },
+    {
+      title: "Countries",
+      items: analytics?.countries.length
+        ? analytics.countries.map((item) => ({ label: item.country, views: item.views }))
+        : [{ label: "Unknown", views: 0 }],
+    },
   ];
 
   async function uploadCv(event: FormEvent<HTMLFormElement>, locale: "en" | "zh") {
@@ -631,6 +659,9 @@ export default function AdminPage() {
       form.reset();
       setMessage(payload.message ?? "CV uploaded.");
       await refreshStatus();
+      if (currentUser.role === "super_admin") {
+        await refreshAuditLogs();
+      }
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Upload failed.");
     } finally {
@@ -650,6 +681,9 @@ export default function AdminPage() {
 
       setMessage(payload.message ?? "CV removed.");
       await refreshStatus();
+      if (currentUser.role === "super_admin") {
+        await refreshAuditLogs();
+      }
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Remove failed.");
     } finally {
@@ -679,6 +713,9 @@ export default function AdminPage() {
       }
 
       setMessage(payload.message ?? "Content saved.");
+      if (currentUser.role === "super_admin") {
+        await refreshAuditLogs();
+      }
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Save failed.");
     } finally {
@@ -873,6 +910,14 @@ export default function AdminPage() {
             <span>CV views</span>
             <strong>{analytics?.totals.cvViews ?? 0}</strong>
           </article>
+          <article>
+            <span>CV downloads</span>
+            <strong>{analytics?.totals.cvDownloads ?? 0}</strong>
+          </article>
+          <article>
+            <span>Contact clicks</span>
+            <strong>{analytics?.totals.contactClicks ?? 0}</strong>
+          </article>
         </div>
         <div className="traffic-tabs" aria-label="Traffic range">
           {(["daily", "weekly", "monthly"] as const).map((period) => (
@@ -893,9 +938,44 @@ export default function AdminPage() {
           ))}
         </div>
         <div className="analytics-notes">
-          <p>Useful next metrics: CV download clicks, contact icon clicks, language preference, and visit location by country.</p>
+          <p>Tracking page views, CV downloads, contact clicks, device, browser, referrer, and country source.</p>
         </div>
       </section>
+
+      {currentUser.role === "super_admin" && (
+        <section className="audit-panel reveal">
+          <div className="editor-heading">
+            <div>
+              <p className="section-label">Activity</p>
+              <h2>Operation log</h2>
+              <p>Recent administrative changes are recorded with actor, action, target, and time.</p>
+            </div>
+            <button className="button secondary compact-action" type="button" onClick={refreshAuditLogs}>
+              Refresh
+            </button>
+          </div>
+          <div className="audit-list">
+            {(auditLogs.length ? auditLogs : [
+              {
+                id: "empty",
+                actorUsername: "System",
+                action: "No activity yet",
+                targetType: "audit",
+                targetLabel: "Waiting for admin actions",
+                details: null,
+                createdAt: "",
+              },
+            ]).map((log) => (
+              <article className="audit-item" key={log.id}>
+                <span>{log.actorUsername}</span>
+                <strong>{log.action}</strong>
+                <p>{log.targetLabel}</p>
+                <em>{log.createdAt ? new Date(log.createdAt).toLocaleString() : "No timestamp"}</em>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
 
       {currentUser.role === "super_admin" && (
         <section className="content-editor user-management">

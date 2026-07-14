@@ -9,6 +9,8 @@ export type AnalyticsSummary = {
     last7Days: number;
     visitors: number;
     cvViews: number;
+    cvDownloads: number;
+    contactClicks: number;
   };
   daily: Array<{ date: string; views: number; visitors: number }>;
   weekly: Array<{ date: string; views: number; visitors: number }>;
@@ -17,7 +19,10 @@ export type AnalyticsSummary = {
   referrers: Array<{ referrer: string; views: number }>;
   devices: Array<{ device: string; views: number }>;
   browsers: Array<{ browser: string; views: number }>;
+  countries: Array<{ country: string; views: number }>;
 };
+
+type AnalyticsEventType = "page_view" | "cv_download" | "contact_click";
 
 type CountRow = {
   count: number;
@@ -35,20 +40,30 @@ type LabelRow = {
 };
 
 export async function ensureAnalyticsTable(db: D1Database) {
+  await db
+    .prepare(
+      "CREATE TABLE IF NOT EXISTS traffic_events (id TEXT PRIMARY KEY, path TEXT NOT NULL, referrer TEXT, country TEXT, device TEXT NOT NULL, browser TEXT NOT NULL, visitor_hash TEXT NOT NULL, event_type TEXT NOT NULL DEFAULT 'page_view', created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)"
+    )
+    .run();
+
+  try {
+    await db.prepare("ALTER TABLE traffic_events ADD COLUMN event_type TEXT NOT NULL DEFAULT 'page_view'").run();
+  } catch {
+    // Existing databases already have the column after the migration runs.
+  }
+
   await db.batch([
-    db.prepare(
-      "CREATE TABLE IF NOT EXISTS traffic_events (id TEXT PRIMARY KEY, path TEXT NOT NULL, referrer TEXT, country TEXT, device TEXT NOT NULL, browser TEXT NOT NULL, visitor_hash TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)"
-    ),
     db.prepare("CREATE INDEX IF NOT EXISTS traffic_events_created_at_idx ON traffic_events(created_at)"),
     db.prepare("CREATE INDEX IF NOT EXISTS traffic_events_path_idx ON traffic_events(path)"),
     db.prepare("CREATE INDEX IF NOT EXISTS traffic_events_visitor_hash_idx ON traffic_events(visitor_hash)"),
+    db.prepare("CREATE INDEX IF NOT EXISTS traffic_events_event_type_idx ON traffic_events(event_type)"),
   ]);
 }
 
 export async function recordPageView(
   db: D1Database | undefined,
   request: Request,
-  input: { path?: string; referrer?: string }
+  input: { path?: string; referrer?: string; eventType?: AnalyticsEventType }
 ) {
   if (!db) {
     return;
@@ -59,12 +74,13 @@ export async function recordPageView(
   const userAgent = request.headers.get("user-agent") ?? "";
   const path = normalizePath(input.path);
   const referrer = normalizeReferrer(input.referrer ?? request.headers.get("referer"));
-  const country = request.headers.get("cf-ipcountry") || null;
+  const country = normalizeCountry(request.headers.get("cf-ipcountry"));
   const visitorHash = await visitorFingerprint(request, userAgent);
+  const eventType = normalizeEventType(input.eventType);
 
   await db
     .prepare(
-      "INSERT INTO traffic_events (id, path, referrer, country, device, browser, visitor_hash, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)"
+      "INSERT INTO traffic_events (id, path, referrer, country, device, browser, visitor_hash, event_type, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)"
     )
     .bind(
       crypto.randomUUID(),
@@ -73,7 +89,8 @@ export async function recordPageView(
       country,
       detectDevice(userAgent),
       detectBrowser(userAgent),
-      visitorHash
+      visitorHash,
+      eventType
     )
     .run();
 }
@@ -85,49 +102,72 @@ export async function readAnalyticsSummary(db: D1Database | undefined): Promise<
 
   await ensureAnalyticsTable(db);
 
-  const [views, today, last7Days, visitors, cvViews, daily, weekly, monthly, topPages, referrers, devices, browsers] =
+  const [
+    views,
+    today,
+    last7Days,
+    visitors,
+    cvViews,
+    cvDownloads,
+    contactClicks,
+    daily,
+    weekly,
+    monthly,
+    topPages,
+    referrers,
+    devices,
+    browsers,
+    countries,
+  ] =
     await Promise.all([
-      count(db, "SELECT COUNT(*) AS count FROM traffic_events"),
-      count(db, "SELECT COUNT(*) AS count FROM traffic_events WHERE date(created_at) = date('now')"),
+      count(db, "SELECT COUNT(*) AS count FROM traffic_events WHERE event_type = 'page_view'"),
+      count(db, "SELECT COUNT(*) AS count FROM traffic_events WHERE event_type = 'page_view' AND date(created_at) = date('now')"),
       count(
         db,
-        "SELECT COUNT(*) AS count FROM traffic_events WHERE created_at >= datetime('now', '-7 days')"
+        "SELECT COUNT(*) AS count FROM traffic_events WHERE event_type = 'page_view' AND created_at >= datetime('now', '-7 days')"
       ),
-      count(db, "SELECT COUNT(DISTINCT visitor_hash) AS count FROM traffic_events"),
-      count(db, "SELECT COUNT(*) AS count FROM traffic_events WHERE path LIKE '/cv%'"),
+      count(db, "SELECT COUNT(DISTINCT visitor_hash) AS count FROM traffic_events WHERE event_type = 'page_view'"),
+      count(db, "SELECT COUNT(*) AS count FROM traffic_events WHERE event_type = 'page_view' AND path LIKE '/cv%'"),
+      count(db, "SELECT COUNT(*) AS count FROM traffic_events WHERE event_type = 'cv_download'"),
+      count(db, "SELECT COUNT(*) AS count FROM traffic_events WHERE event_type = 'contact_click'"),
       db
         .prepare(
-          "SELECT date(created_at) AS date, COUNT(*) AS views, COUNT(DISTINCT visitor_hash) AS visitors FROM traffic_events WHERE created_at >= datetime('now', '-13 days') GROUP BY date(created_at) ORDER BY date(created_at) ASC"
+          "SELECT date(created_at) AS date, COUNT(*) AS views, COUNT(DISTINCT visitor_hash) AS visitors FROM traffic_events WHERE event_type = 'page_view' AND created_at >= datetime('now', '-13 days') GROUP BY date(created_at) ORDER BY date(created_at) ASC"
         )
         .all<DailyRow>(),
       db
         .prepare(
-          "SELECT strftime('%Y-W%W', created_at) AS date, COUNT(*) AS views, COUNT(DISTINCT visitor_hash) AS visitors FROM traffic_events WHERE created_at >= datetime('now', '-84 days') GROUP BY strftime('%Y-W%W', created_at) ORDER BY date ASC"
+          "SELECT strftime('%Y-W%W', created_at) AS date, COUNT(*) AS views, COUNT(DISTINCT visitor_hash) AS visitors FROM traffic_events WHERE event_type = 'page_view' AND created_at >= datetime('now', '-84 days') GROUP BY strftime('%Y-W%W', created_at) ORDER BY date ASC"
         )
         .all<DailyRow>(),
       db
         .prepare(
-          "SELECT strftime('%Y-%m', created_at) AS date, COUNT(*) AS views, COUNT(DISTINCT visitor_hash) AS visitors FROM traffic_events WHERE created_at >= datetime('now', '-12 months') GROUP BY strftime('%Y-%m', created_at) ORDER BY date ASC"
+          "SELECT strftime('%Y-%m', created_at) AS date, COUNT(*) AS views, COUNT(DISTINCT visitor_hash) AS visitors FROM traffic_events WHERE event_type = 'page_view' AND created_at >= datetime('now', '-12 months') GROUP BY strftime('%Y-%m', created_at) ORDER BY date ASC"
         )
         .all<DailyRow>(),
       db
         .prepare(
-          "SELECT path AS label, COUNT(*) AS views FROM traffic_events GROUP BY path ORDER BY views DESC LIMIT 5"
+          "SELECT path AS label, COUNT(*) AS views FROM traffic_events WHERE event_type = 'page_view' GROUP BY path ORDER BY views DESC LIMIT 5"
         )
         .all<LabelRow>(),
       db
         .prepare(
-          "SELECT COALESCE(referrer, 'Direct') AS label, COUNT(*) AS views FROM traffic_events GROUP BY COALESCE(referrer, 'Direct') ORDER BY views DESC LIMIT 5"
+          "SELECT COALESCE(referrer, 'Direct') AS label, COUNT(*) AS views FROM traffic_events WHERE event_type = 'page_view' GROUP BY COALESCE(referrer, 'Direct') ORDER BY views DESC LIMIT 5"
         )
         .all<LabelRow>(),
       db
         .prepare(
-          "SELECT device AS label, COUNT(*) AS views FROM traffic_events GROUP BY device ORDER BY views DESC LIMIT 5"
+          "SELECT device AS label, COUNT(*) AS views FROM traffic_events WHERE event_type = 'page_view' GROUP BY device ORDER BY views DESC LIMIT 5"
         )
         .all<LabelRow>(),
       db
         .prepare(
-          "SELECT browser AS label, COUNT(*) AS views FROM traffic_events GROUP BY browser ORDER BY views DESC LIMIT 5"
+          "SELECT browser AS label, COUNT(*) AS views FROM traffic_events WHERE event_type = 'page_view' GROUP BY browser ORDER BY views DESC LIMIT 5"
+        )
+        .all<LabelRow>(),
+      db
+        .prepare(
+          "SELECT COALESCE(country, 'Unknown') AS label, COUNT(*) AS views FROM traffic_events WHERE event_type = 'page_view' GROUP BY COALESCE(country, 'Unknown') ORDER BY views DESC LIMIT 5"
         )
         .all<LabelRow>(),
     ]);
@@ -139,6 +179,8 @@ export async function readAnalyticsSummary(db: D1Database | undefined): Promise<
       last7Days,
       visitors,
       cvViews,
+      cvDownloads,
+      contactClicks,
     },
     daily: daily.results ?? [],
     weekly: weekly.results ?? [],
@@ -147,6 +189,7 @@ export async function readAnalyticsSummary(db: D1Database | undefined): Promise<
     referrers: mapLabelRows(referrers.results ?? [], "referrer"),
     devices: mapLabelRows(devices.results ?? [], "device"),
     browsers: mapLabelRows(browsers.results ?? [], "browser"),
+    countries: mapLabelRows(countries.results ?? [], "country"),
   };
 }
 
@@ -156,7 +199,7 @@ async function count(db: D1Database, sql: string) {
   return row?.count ?? 0;
 }
 
-function mapLabelRows<T extends "path" | "referrer" | "device" | "browser">(
+function mapLabelRows<T extends "path" | "referrer" | "device" | "browser" | "country">(
   rows: LabelRow[],
   key: T
 ): Array<Record<T, string> & { views: number }> {
@@ -193,6 +236,22 @@ function normalizeReferrer(value: string | null | undefined) {
   } catch {
     return null;
   }
+}
+
+function normalizeCountry(value: string | null) {
+  if (!value || value === "XX" || value.length > 8) {
+    return null;
+  }
+
+  return value.toUpperCase();
+}
+
+function normalizeEventType(value: string | undefined): AnalyticsEventType {
+  if (value === "cv_download" || value === "contact_click") {
+    return value;
+  }
+
+  return "page_view";
 }
 
 async function visitorFingerprint(request: Request, userAgent: string) {
@@ -248,6 +307,8 @@ function emptySummary(): AnalyticsSummary {
       last7Days: 0,
       visitors: 0,
       cvViews: 0,
+      cvDownloads: 0,
+      contactClicks: 0,
     },
     daily: [],
     weekly: [],
@@ -256,5 +317,6 @@ function emptySummary(): AnalyticsSummary {
     referrers: [],
     devices: [],
     browsers: [],
+    countries: [],
   };
 }

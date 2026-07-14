@@ -93,20 +93,26 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    trackEvent("page_view");
+  }, []);
+
+  function trackEvent(eventType: "page_view" | "contact_click", path?: string) {
     fetch("/api/analytics/track", {
       method: "POST",
       headers: {
         "content-type": "application/json",
       },
       body: JSON.stringify({
-        path: `${window.location.pathname}${window.location.search}`,
+        path: path ?? `${window.location.pathname}${window.location.search}`,
         referrer: document.referrer,
+        eventType,
       }),
       keepalive: true,
     }).catch(() => {});
-  }, []);
+  }
 
   async function copyWechat() {
+    trackEvent("contact_click", "/contact/wechat");
     await navigator.clipboard.writeText(contact.wechat);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1600);
@@ -120,6 +126,7 @@ export default function Home() {
           href={`mailto:${contact.email}`}
           aria-label={t.links.email}
           data-label={t.links.email}
+          onClick={() => trackEvent("contact_click", "/contact/email")}
         >
           <Mail aria-hidden="true" size={21} strokeWidth={1.8} />
         </a>
@@ -130,6 +137,7 @@ export default function Home() {
           rel="noreferrer"
           aria-label={t.links.github}
           data-label={t.links.github}
+          onClick={() => trackEvent("contact_click", "/contact/github")}
         >
           <GitHubMark />
         </a>

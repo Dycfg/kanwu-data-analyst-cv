@@ -6,9 +6,12 @@ import {
   type AdminRole,
   type AuthRuntimeEnv,
 } from "../../../server/auth-store";
+import { writeAuditLog, type AuditRuntimeEnv } from "../../../server/audit-log-store";
+
+type RuntimeEnv = AuthRuntimeEnv & AuditRuntimeEnv;
 
 function runtimeEnv() {
-  return env as unknown as AuthRuntimeEnv;
+  return env as unknown as RuntimeEnv;
 }
 
 export async function GET(request: Request) {
@@ -52,6 +55,14 @@ export async function POST(request: Request) {
       password: payload.password ?? "",
       role: payload.role === "super_admin" ? "super_admin" : "admin",
     }, auth.user);
+    await writeAuditLog(db, {
+      actor: auth.user,
+      action: "user.created",
+      targetType: "admin_user",
+      targetId: user.id,
+      targetLabel: user.username,
+      details: user.role,
+    });
 
     return Response.json({ user, message: "User created." });
   } catch (error) {

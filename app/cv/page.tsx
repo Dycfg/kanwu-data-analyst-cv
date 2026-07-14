@@ -54,6 +54,10 @@ export default function CvPage() {
   }, []);
 
   useEffect(() => {
+    trackEvent("page_view");
+  }, []);
+
+  function trackEvent(eventType: "page_view" | "cv_download") {
     fetch("/api/analytics/track", {
       method: "POST",
       headers: {
@@ -62,10 +66,11 @@ export default function CvPage() {
       body: JSON.stringify({
         path: `${window.location.pathname}${window.location.search}`,
         referrer: document.referrer,
+        eventType,
       }),
       keepalive: true,
     }).catch(() => {});
-  }, []);
+  }
 
   return (
     <main className="cv-page">
@@ -94,7 +99,7 @@ export default function CvPage() {
             <a className="button primary" href={cvUrl} target="_blank" rel="noreferrer">
               {t.open}
             </a>
-            <a className="button secondary" href={cvUrl} download>
+            <a className="button secondary" href={cvUrl} download onClick={() => trackEvent("cv_download")}>
               {t.download}
             </a>
           </div>

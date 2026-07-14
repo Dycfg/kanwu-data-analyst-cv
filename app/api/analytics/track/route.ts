@@ -12,11 +12,13 @@ export async function POST(request: Request) {
   const payload = (await request.json().catch(() => ({}))) as {
     path?: string;
     referrer?: string;
+    eventType?: "page_view" | "cv_download" | "contact_click";
   };
 
   await recordPageView(runtimeEnv().DB, request, {
     path: payload.path,
     referrer: payload.referrer,
+    eventType: payload.eventType,
   });
 
   return Response.json({ ok: true });

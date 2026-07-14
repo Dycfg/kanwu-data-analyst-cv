@@ -4,9 +4,10 @@ import {
   requireAdminUser,
   type AuthRuntimeEnv,
 } from "../../../server/auth-store";
+import { writeAuditLog, type AuditRuntimeEnv } from "../../../server/audit-log-store";
 
 function runtimeEnv() {
-  return env as unknown as AuthRuntimeEnv;
+  return env as unknown as AuthRuntimeEnv & AuditRuntimeEnv;
 }
 
 export async function PATCH(request: Request) {
@@ -34,6 +35,13 @@ export async function PATCH(request: Request) {
       payload.currentPassword ?? "",
       payload.nextPassword ?? ""
     );
+    await writeAuditLog(db, {
+      actor: auth.user,
+      action: "password.changed",
+      targetType: "admin_user",
+      targetId: auth.user.id,
+      targetLabel: auth.user.username,
+    });
   } catch (error) {
     return Response.json(
       { error: error instanceof Error ? error.message : "Password update failed." },

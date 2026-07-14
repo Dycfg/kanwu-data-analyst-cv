@@ -39,6 +39,7 @@ test("defines the bilingual public CV site", async () => {
 test("keeps CV and admin upload routes wired", async () => {
   const [
     cvPage,
+    adminLayout,
     adminPage,
     loginPage,
     cvApi,
@@ -48,14 +49,17 @@ test("keeps CV and admin upload routes wired", async () => {
     loginApi,
     usersApi,
     userApi,
+    auditApi,
     passwordApi,
     authStore,
+    auditStore,
     analyticsApi,
     analyticsTrackApi,
     analyticsStore,
     hosting,
   ] = await Promise.all([
     readProjectFile("app/cv/page.tsx"),
+    readProjectFile("app/admin/layout.tsx"),
     readProjectFile("app/admin/page.tsx"),
     readProjectFile("app/admin/login/page.tsx"),
     readProjectFile("app/api/cv/[locale]/route.ts"),
@@ -65,8 +69,10 @@ test("keeps CV and admin upload routes wired", async () => {
     readProjectFile("app/api/admin/auth/login/route.ts"),
     readProjectFile("app/api/admin/users/route.ts"),
     readProjectFile("app/api/admin/users/[id]/route.ts"),
+    readProjectFile("app/api/admin/audit-logs/route.ts"),
     readProjectFile("app/api/admin/password/route.ts"),
     readProjectFile("app/server/auth-store.ts"),
+    readProjectFile("app/server/audit-log-store.ts"),
     readProjectFile("app/api/admin/analytics/route.ts"),
     readProjectFile("app/api/analytics/track/route.ts"),
     readProjectFile("app/server/analytics-store.ts"),
@@ -75,12 +81,16 @@ test("keeps CV and admin upload routes wired", async () => {
 
   assert.match(cvPage, /\/api\/cv\/\$\{lang\}/);
   assert.match(cvPage, /\/api\/analytics\/track/);
+  assert.match(cvPage, /cv_download/);
   assert.match(cvPage, /Download English CV/);
   assert.match(cvPage, /paper-preview/);
   assert.match(cvPage, /cv-preview-en\.png/);
   assert.match(cvPage, /Open full PDF/);
   assert.doesNotMatch(cvPage, /iframe|pdf-frame|pdf-placeholder/);
   assert.doesNotMatch(cvPage, /admin page|后台页面/i);
+  assert.match(adminLayout, /robots/);
+  assert.match(adminLayout, /index:\s*false/);
+  assert.match(adminLayout, /follow:\s*false/);
   assert.match(adminPage, /Site management/);
   assert.match(adminPage, /Signed in/);
   assert.match(adminPage, /Content CMS/);
@@ -109,6 +119,11 @@ test("keeps CV and admin upload routes wired", async () => {
   assert.match(adminPage, /AnalyticsInsightList/);
   assert.match(adminPage, /analytics-insight/);
   assert.match(adminPage, /insightGroups/);
+  assert.match(adminPage, /CV downloads/);
+  assert.match(adminPage, /Contact clicks/);
+  assert.match(adminPage, /Countries/);
+  assert.match(adminPage, /Operation log/);
+  assert.match(adminPage, /\/api\/admin\/audit-logs/);
   assert.match(adminPage, /\/api\/admin\/analytics/);
   assert.match(adminPage, /\/api\/admin\/auth\/me/);
   assert.match(adminPage, /\/api\/admin\/auth\/logout/);
@@ -159,12 +174,18 @@ test("keeps CV and admin upload routes wired", async () => {
   assert.match(usersApi, /auth\.user/);
   assert.match(userApi, /deleteAdminUser/);
   assert.match(userApi, /updateAdminUser/);
+  assert.match(auditApi, /readAuditLogs/);
+  assert.match(auditApi, /requireSuperAdmin/);
   assert.match(passwordApi, /changeOwnPassword/);
+  assert.match(auditStore, /admin_audit_logs/);
+  assert.match(auditStore, /writeAuditLog/);
+  assert.match(auditStore, /readAuditLogs/);
   assert.match(authStore, /admin_users/);
   assert.match(authStore, /admin_sessions/);
   assert.match(authStore, /PBKDF2/);
   assert.match(authStore, /password_hash/);
   assert.match(authStore, /rootAdminUsername = "admin"/);
+  assert.doesNotMatch(authStore, /defaultLocalAdminPassword|Kanwu-Admin#2026/);
   assert.match(authStore, /Permission denied/);
   assert.match(authStore, /Only the root administrator can create super administrators/);
   assert.match(authStore, /Only the root administrator can promote super administrators/);
@@ -179,7 +200,12 @@ test("keeps CV and admin upload routes wired", async () => {
   assert.match(analyticsApi, /requireAdminUser/);
   assert.match(analyticsApi, /readAnalyticsSummary/);
   assert.match(analyticsTrackApi, /recordPageView/);
+  assert.match(analyticsTrackApi, /eventType/);
   assert.match(analyticsStore, /traffic_events/);
+  assert.match(analyticsStore, /event_type/);
+  assert.match(analyticsStore, /cv_download/);
+  assert.match(analyticsStore, /contact_click/);
+  assert.match(analyticsStore, /countries/);
   assert.match(analyticsStore, /visitor_hash/);
   assert.match(analyticsStore, /weekly/);
   assert.match(analyticsStore, /monthly/);
@@ -193,13 +219,14 @@ test("keeps CV and admin upload routes wired", async () => {
 });
 
 test("declares editable default content and D1 migration", async () => {
-  const [content, schema, contentMigration, authMigration, indexMigration, trafficMigration] = await Promise.all([
+  const [content, schema, contentMigration, authMigration, indexMigration, trafficMigration, auditMigration] = await Promise.all([
     readProjectFile("app/site-content.ts"),
     readProjectFile("db/schema.ts"),
     readProjectFile("drizzle/0000_tiresome_mattie_franklin.sql"),
     readProjectFile("drizzle/0001_abandoned_piledriver.sql"),
     readProjectFile("drizzle/0002_curly_midnight.sql"),
     readProjectFile("drizzle/0003_big_the_professor.sql"),
+    readProjectFile("drizzle/0004_classy_maelstrom.sql"),
   ]);
 
   assert.match(content, /defaultSiteContent/);
@@ -209,6 +236,7 @@ test("declares editable default content and D1 migration", async () => {
   assert.match(schema, /adminUsers/);
   assert.match(schema, /adminSessions/);
   assert.match(schema, /trafficEvents/);
+  assert.match(schema, /adminAuditLogs/);
   assert.match(contentMigration, /CREATE TABLE `site_content`/);
   assert.match(authMigration, /CREATE TABLE `admin_users`/);
   assert.match(authMigration, /CREATE TABLE `admin_sessions`/);
@@ -217,6 +245,9 @@ test("declares editable default content and D1 migration", async () => {
   assert.match(trafficMigration, /CREATE TABLE `traffic_events`/);
   assert.match(trafficMigration, /traffic_events_created_at_idx/);
   assert.match(trafficMigration, /traffic_events_visitor_hash_idx/);
+  assert.match(auditMigration, /CREATE TABLE `admin_audit_logs`/);
+  assert.match(auditMigration, /ALTER TABLE `traffic_events` ADD `event_type`/);
+  assert.match(auditMigration, /traffic_events_event_type_idx/);
 });
 
 test("includes default English and Chinese CV PDFs", async () => {

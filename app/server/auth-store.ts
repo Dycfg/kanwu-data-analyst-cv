@@ -18,7 +18,6 @@ const sessionCookieName = "kanwu_admin_session";
 const passwordAlgorithm = "pbkdf2_sha256";
 const passwordIterations = 210_000;
 const sessionDays = 7;
-const defaultLocalAdminPassword = "Kanwu-Admin#2026";
 const rootAdminUsername = "admin";
 
 type AdminUserRow = AdminUser & {
@@ -67,7 +66,7 @@ export async function bootstrapSuperAdmin(db: D1Database, env: AuthRuntimeEnv, r
 
   const local = isLocalRequest(request);
   const username = env.INITIAL_ADMIN_USERNAME ?? (local ? "admin" : "");
-  const password = env.INITIAL_ADMIN_PASSWORD ?? (local ? defaultLocalAdminPassword : "");
+  const password = env.INITIAL_ADMIN_PASSWORD ?? "";
 
   if (!username || !password) {
     return;
