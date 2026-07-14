@@ -1,10 +1,12 @@
 "use client";
 
+import { Eye, EyeOff } from "lucide-react";
 import { FormEvent, useState } from "react";
 
 export default function AdminLoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -62,13 +64,27 @@ export default function AdminLoginPage() {
         </label>
         <label className="admin-key">
           <span>Password</span>
-          <input
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            autoComplete="current-password"
-            type="password"
-            placeholder="Enter password"
-          />
+          <span className="password-field">
+            <input
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              autoComplete="current-password"
+              type={showPassword ? "text" : "password"}
+              placeholder="Enter password"
+            />
+            <button
+              className="password-toggle"
+              type="button"
+              onClick={() => setShowPassword((isVisible) => !isVisible)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? (
+                <EyeOff aria-hidden="true" size={19} strokeWidth={1.8} />
+              ) : (
+                <Eye aria-hidden="true" size={19} strokeWidth={1.8} />
+              )}
+            </button>
+          </span>
         </label>
         <button className="button primary" type="submit" disabled={busy}>
           {busy ? "Signing in" : "Sign in"}

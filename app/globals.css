@@ -987,7 +987,10 @@ h3 {
 
 .login-panel {
   position: relative;
+  display: grid;
+  gap: 18px;
   overflow: hidden;
+  padding-block: 28px 34px;
   animation: panel-enter 620ms ease 80ms both;
 }
 
@@ -1035,7 +1038,7 @@ h3 {
   gap: 10px;
 }
 
-.admin-key span {
+.admin-key > span {
   font-family: var(--font-mono), monospace;
   font-size: 12px;
   text-transform: uppercase;
@@ -1049,6 +1052,50 @@ h3 {
   border-radius: 0;
   background: var(--paper);
   padding: 0 12px;
+}
+
+.password-field {
+  position: relative;
+  display: block;
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  font-size: inherit;
+  text-transform: none;
+}
+
+.password-field input {
+  padding-right: 52px;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transform: translateY(-50%);
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    color 160ms ease;
+}
+
+.password-toggle:hover,
+.password-toggle:focus-visible {
+  border-color: var(--line);
+  background: color-mix(in srgb, var(--ink) 5%, transparent);
+  color: var(--ink);
+}
+
+.login-panel > .button {
+  justify-self: start;
+  margin-top: 6px;
 }
 
 .admin-panel code {

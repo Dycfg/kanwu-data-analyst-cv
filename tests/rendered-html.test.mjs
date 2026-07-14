@@ -107,6 +107,10 @@ test("keeps CV and admin upload routes wired", async () => {
   assert.match(loginPage, /Admin login/);
   assert.match(loginPage, /\/api\/admin\/auth\/login/);
   assert.match(loginPage, /placeholder="Username"/);
+  assert.match(loginPage, /EyeOff/);
+  assert.match(loginPage, /Show password/);
+  assert.match(loginPage, /Hide password/);
+  assert.match(loginPage, /password-toggle/);
   assert.doesNotMatch(loginPage, /Local first-use account|kanwu-admin|value="admin"/);
   assert.match(cvApi, /CV_BUCKET/);
   assert.match(adminApi, /requireAdminUser/);
