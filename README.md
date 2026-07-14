@@ -1,98 +1,108 @@
-# vinext-starter
+# KanWu Data Analyst CV Site
 
-A clean full-stack starter running on
-[vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and
-Drizzle support.
+Personal bilingual CV website for KanWu / Wu Kan. The public site includes a
+portfolio-style homepage, a dedicated CV preview/download page, and a private
+admin area for content, CV files, users, audit logs, and visitor analytics.
 
-## Prerequisites
+## Stack
 
-- Node.js `>=22.13.0`
+- Vinext / Next app routes
+- Cloudflare D1-compatible SQLite schema with Drizzle migrations
+- R2-compatible object storage for English and Chinese CV PDFs
+- Database-backed admin login and role permissions
+- Public analytics events for page views, CV downloads, contact clicks, and
+  country/source/device/browser summaries
 
-## Quick Start
+## Local Development
 
 ```bash
 npm install
 npm run dev
-npm run build
 ```
 
-This starter does not use `wrangler.jsonc`.
+Run checks before pushing changes:
 
-## Included Shape
+```bash
+npm test
+```
 
-- edit site code under `app/`
-- `.openai/hosting.json` declares optional Sites D1 and R2 bindings
-- `vite.config.ts` simulates declared bindings for local development
-- `db/schema.ts` starts intentionally empty
-- `examples/d1/` contains an optional D1 example surface
-- `drizzle.config.ts` supports local migration generation when needed
+Generate migrations after schema changes:
 
-## Workspace Auth Headers
+```bash
+npm run db:generate
+```
 
-OpenAI workspace sites can read the current user's email from
-`oai-authenticated-user-email`.
+## Runtime Bindings
 
-SIWC-authenticated workspace sites may also receive
-`oai-authenticated-user-full-name` when the user's SIWC profile has a non-empty
-`name` claim. The full-name value is percent-encoded UTF-8 and is accompanied by
-`oai-authenticated-user-full-name-encoding: percent-encoded-utf-8`.
+The site expects these production bindings:
 
-Treat the full name as optional and fall back to email when it is absent:
+- `DB`: D1-compatible database for admin users, sessions, content, analytics,
+  and audit logs.
+- `CV_BUCKET`: R2-compatible bucket for uploaded CV PDFs.
 
-```tsx
-import { headers } from "next/headers";
+`.openai/hosting.json` stores only logical binding names:
 
-export default async function Home() {
-  const requestHeaders = await headers();
-  const email = requestHeaders.get("oai-authenticated-user-email");
-  const encodedFullName = requestHeaders.get("oai-authenticated-user-full-name");
-  const fullName =
-    encodedFullName &&
-    requestHeaders.get("oai-authenticated-user-full-name-encoding") ===
-      "percent-encoded-utf-8"
-      ? decodeURIComponent(encodedFullName)
-      : null;
-
-  const displayName = fullName ?? email;
-  // ...
+```json
+{
+  "d1": "DB",
+  "r2": "CV_BUCKET"
 }
 ```
 
-## Optional Dispatch-Owned ChatGPT Sign-In
+Do not commit real database credentials, bucket credentials, or admin passwords.
 
-Import the ready-to-use helpers from `app/chatgpt-auth.ts` when the site needs
-optional or required ChatGPT sign-in:
+## Production Environment Variables
 
-- Use `getChatGPTUser()` for optional signed-in UI.
-- Use `requireChatGPTUser(returnTo)` for server-rendered pages that should send
-  anonymous visitors through Sign in with ChatGPT.
-- Use `chatGPTSignInPath(returnTo)` and `chatGPTSignOutPath(returnTo)` for
-  browser links or actions.
-- Pass a same-origin relative `returnTo` path for the destination after sign-in
-  or sign-out. The helper validates and safely encodes it.
-- Mark protected pages with `export const dynamic = "force-dynamic"` because
-  they depend on per-request identity headers.
+Set these in the hosting platform, not in source control:
 
-Dispatch owns `/signin-with-chatgpt`, `/signout-with-chatgpt`, `/callback`, the
-OAuth cookies, and identity header injection. Do not implement app routes for
-those reserved paths. Routes that do not import and call the helper remain
-anonymous-compatible.
+- `INITIAL_ADMIN_USERNAME=admin`
+- `INITIAL_ADMIN_PASSWORD=<strong-secret>`
 
-SIWC establishes identity only; it does not prove workspace membership. Use the
-Sites hosting platform's access policy controls for workspace-wide restrictions,
-or enforce explicit server-side membership or allowlist checks.
+The initial password is used only when a fresh database has no admin users yet.
+After first sign-in, change the root admin password from `/admin`.
 
-Use SIWC for account pages, user-specific dashboards, saved records, and write
-actions tied to the current ChatGPT user. Leave public content anonymous.
+Password rule:
 
-## Useful Commands
+- at least 10 characters
+- at least one uppercase letter
+- at least one lowercase letter
+- at least one number
+- at least one symbol
 
-- `npm run dev`: start local development
-- `npm run build`: verify the vinext build output
-- `npm test`: build the starter and verify its rendered loading skeleton
-- `npm run db:generate`: generate Drizzle migrations after schema changes
+Remove any old `ADMIN_KEY` variable after deploying the database-backed admin
+version.
 
-## Learn More
+## Production Deployment Checklist
 
-- [vinext Documentation](https://github.com/cloudflare/vinext)
-- [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
+1. Run `npm test`.
+2. Confirm migrations in `drizzle/` are committed.
+3. Configure production bindings for `DB` and `CV_BUCKET`.
+4. Set `INITIAL_ADMIN_USERNAME` and `INITIAL_ADMIN_PASSWORD` as production
+   environment variables.
+5. Deploy the validated build.
+6. Sign in to `/admin/login` with the initial admin account.
+7. Change the root admin password immediately.
+8. Upload the English and Chinese CV PDFs from `/admin`.
+9. Check `/`, `/cv?lang=en`, `/cv?lang=zh`, analytics, and audit logs.
+10. When ready for a custom domain, add the domain and configure DNS records.
+
+## Admin Security Notes
+
+- `/admin` has `noindex`, `nofollow`, and `nocache` metadata to keep the admin
+  area out of search engine indexes and caches.
+- Only the root `admin` super administrator can create other super
+  administrators.
+- Super administrators cannot be deleted.
+- Ordinary administrators cannot view or manage super administrator accounts.
+- Audit logs record administrative content, CV, password, and user-management
+  actions.
+
+## Next Content Pass
+
+Before formal job applications, refine the public copy against target job
+descriptions:
+
+- make the hero summary closer to each target data analyst role
+- convert internship/work entries into measurable outcomes
+- select 2-4 strongest analysis projects or work examples
+- align skills with the job description while staying truthful
