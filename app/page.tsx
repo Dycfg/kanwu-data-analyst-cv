@@ -1,174 +1,23 @@
 "use client";
 
+import { Mail, MessageCircle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { defaultSiteContent, type Lang, type SiteContent } from "./site-content";
 
-type Lang = "en" | "zh";
-
-const content = {
-  en: {
-    nav: ["About", "Experience", "Skills", "Projects", "CV", "Contact"],
-    navTargets: ["about", "experience", "skills", "projects", "cv", "contact"],
-    languageLabel: "中文",
-    eyebrow: "KanWu / Wu Kan",
-    role: "Data Analyst",
-    tagline:
-      "Data Analyst with a focus on business insight, reporting, and data-driven decision making.",
-    intro:
-      "I translate messy operational and business data into clear reporting, practical analysis, and decisions that teams can act on. My work sits between analytics execution and business communication: SQL, Python, dashboards, careful interpretation, and concise storytelling.",
-    primaryCta: "View CV",
-    secondaryCta: "Contact me",
-    links: {
-      github: "GitHub",
-      linkedin: "LinkedIn soon",
-      email: "Email",
-      wechat: "Copy WeChat",
-    },
-    copied: "Copied",
-    aboutTitle: "About",
-    aboutKicker: "Analytical work, business language.",
-    aboutBody: [
-      "I am building my career around data analysis for business insight, reporting, and decision support.",
-      "My focus is on understanding the question behind a metric, cleaning and structuring the data, then presenting findings in a way that helps teams move.",
-      "The detailed experience section will be refined from the English and Chinese CV files once they are uploaded.",
-    ],
-    experienceTitle: "Experience",
-    experienceKicker: "Work and internship history will be the core of the site.",
-    experienceNote:
-      "The first version keeps the structure ready for your CV. Once the PDFs are provided, I will extract company names, roles, dates, and 3-5 achievement bullets for each experience.",
-    experienceCards: [
-      {
-        label: "Reporting",
-        title: "Business reporting and dashboard work",
-        body: "Build recurring reports, track business metrics, and turn raw data into readable summaries for stakeholders.",
-      },
-      {
-        label: "Analysis",
-        title: "Operational and user insight",
-        body: "Investigate trends, segment users or transactions, and identify practical drivers behind movement in key indicators.",
-      },
-      {
-        label: "Communication",
-        title: "Decision-ready presentation",
-        body: "Explain methods, assumptions, findings, and next steps in concise language for non-technical audiences.",
-      },
-    ],
-    skillsTitle: "Skills",
-    skills: [
-      ["Data analysis", "SQL", "Python", "Excel", "Statistical analysis"],
-      ["Visualization", "Tableau", "Power BI", "Looker", "Matplotlib"],
-      ["Data processing", "Pandas", "NumPy", "ETL", "Data cleaning"],
-      ["Business focus", "User analysis", "Growth analysis", "Reporting", "Operations analysis"],
-    ],
-    projectsTitle: "Projects",
-    projectsKicker: "Selected projects will be refined from CV evidence.",
-    projects: [
-      {
-        title: "Reporting workflow",
-        meta: "Structure ready",
-        body: "A project slot for dashboards, recurring reporting, or automation work, with room for background, method, tools, and result.",
-      },
-      {
-        title: "Business insight case",
-        meta: "Structure ready",
-        body: "A concise case format for explaining a business question, the analysis path, and the decision or recommendation it supported.",
-      },
-    ],
-    cvTitle: "CV",
-    cvBody:
-      "The CV page will display the English PDF in English mode and the Chinese PDF in Chinese mode. Uploads can be replaced from the admin page.",
-    cvButton: "Open CV page",
-    contactTitle: "Contact",
-    contactBody:
-      "Open to data analyst opportunities, internship conversations, and analytics-focused roles.",
-    adminLink: "Admin",
-  },
-  zh: {
-    nav: ["关于我", "经历", "技能", "项目", "CV", "联系"],
-    navTargets: ["about", "experience", "skills", "projects", "cv", "contact"],
-    languageLabel: "EN",
-    eyebrow: "KanWu / 吴侃",
-    role: "数据分析师",
-    tagline: "专注于业务洞察、数据报告与数据驱动决策的数据分析师。",
-    intro:
-      "我将复杂的业务与运营数据转化为清晰的报告、可执行的分析结论和能够支持团队决策的信息。我的工作连接数据分析执行与业务沟通：SQL、Python、仪表盘、严谨解释，以及简洁表达。",
-    primaryCta: "查看 CV",
-    secondaryCta: "联系我",
-    links: {
-      github: "GitHub",
-      linkedin: "LinkedIn 暂未添加",
-      email: "邮箱",
-      wechat: "复制微信号",
-    },
-    copied: "已复制",
-    aboutTitle: "关于我",
-    aboutKicker: "用分析能力理解业务问题。",
-    aboutBody: [
-      "我正在围绕业务洞察、数据报告和数据驱动决策建立自己的数据分析职业方向。",
-      "我关注指标背后的真实问题，重视数据清洗、结构化处理和分析结论的业务表达。",
-      "等你上传中英文 CV 后，我会根据简历内容进一步细化这里的经历、技能和项目描述。",
-    ],
-    experienceTitle: "经历",
-    experienceKicker: "工作与实习经历会是网站重点。",
-    experienceNote:
-      "第一版先保留清晰结构。上传 PDF 后，我会从 CV 中提取公司、岗位、时间，并为每段经历整理 3 到 5 条成果描述。",
-    experienceCards: [
-      {
-        label: "报告",
-        title: "业务报告与仪表盘",
-        body: "搭建周期性报告，追踪核心业务指标，将原始数据整理成利益相关方易读的分析摘要。",
-      },
-      {
-        label: "分析",
-        title: "运营与用户洞察",
-        body: "分析趋势、用户或交易分层，识别关键指标变化背后的实际驱动因素。",
-      },
-      {
-        label: "沟通",
-        title: "面向决策的表达",
-        body: "用简洁语言说明方法、假设、发现和下一步建议，让非技术受众也能快速理解。",
-      },
-    ],
-    skillsTitle: "技能",
-    skills: [
-      ["数据分析", "SQL", "Python", "Excel", "统计分析"],
-      ["可视化", "Tableau", "Power BI", "Looker", "Matplotlib"],
-      ["数据处理", "Pandas", "NumPy", "ETL", "数据清洗"],
-      ["业务方向", "用户分析", "增长分析", "报告搭建", "运营分析"],
-    ],
-    projectsTitle: "项目",
-    projectsKicker: "精选项目会根据 CV 内容继续完善。",
-    projects: [
-      {
-        title: "报告流程项目",
-        meta: "结构预留",
-        body: "适合放置仪表盘、周期报告或自动化分析相关项目，包含背景、方法、工具与结果。",
-      },
-      {
-        title: "业务洞察案例",
-        meta: "结构预留",
-        body: "用于展示一个业务问题、分析路径，以及最终支持的决策或建议。",
-      },
-    ],
-    cvTitle: "CV",
-    cvBody:
-      "CV 页面会在英文模式展示英文 PDF，在中文模式展示中文 PDF。之后可以在后台替换上传。",
-    cvButton: "打开 CV 页面",
-    contactTitle: "联系",
-    contactBody: "欢迎数据分析师岗位、实习机会以及数据分析相关方向的沟通。",
-    adminLink: "后台",
-  },
-};
-
-const contact = {
-  github: "https://github.com/Dycfg",
-  email: "wuka@tcd.ie",
-  wechat: "W956994000",
-};
+function GitHubMark() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="21" height="21" fill="currentColor">
+      <path d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.19-3.37-1.19a2.65 2.65 0 0 0-1.11-1.46c-.91-.62.07-.61.07-.61a2.1 2.1 0 0 1 1.53 1.03 2.13 2.13 0 0 0 2.91.83 2.13 2.13 0 0 1 .64-1.34c-2.22-.25-4.55-1.11-4.55-4.94a3.87 3.87 0 0 1 1.03-2.68 3.6 3.6 0 0 1 .1-2.64s.84-.27 2.75 1.02a9.49 9.49 0 0 1 5 0c1.91-1.29 2.75-1.02 2.75-1.02.55 1.37.2 2.39.1 2.64a3.86 3.86 0 0 1 1.03 2.68c0 3.84-2.34 4.69-4.57 4.94a2.39 2.39 0 0 1 .68 1.85v2.74c0 .27.18.58.69.48A10 10 0 0 0 12 2Z" />
+    </svg>
+  );
+}
 
 export default function Home() {
   const [lang, setLang] = useState<Lang>("en");
+  const [siteContent, setSiteContent] = useState<SiteContent>(defaultSiteContent);
   const [copied, setCopied] = useState(false);
-  const t = content[lang];
+  const t = siteContent[lang];
+  const contact = siteContent.contact;
   const cvHref = useMemo(() => `/cv?lang=${lang}`, [lang]);
 
   useEffect(() => {
@@ -177,10 +26,74 @@ export default function Home() {
     }
   }, []);
 
+  useEffect(() => {
+    fetch("/api/content", { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((payload: { content?: SiteContent } | null) => {
+        if (payload?.content) {
+          setSiteContent(payload.content);
+        }
+      })
+      .catch(() => {
+        setSiteContent(defaultSiteContent);
+      });
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/analytics/track", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        path: `${window.location.pathname}${window.location.search}`,
+        referrer: document.referrer,
+      }),
+      keepalive: true,
+    }).catch(() => {});
+  }, []);
+
   async function copyWechat() {
     await navigator.clipboard.writeText(contact.wechat);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1600);
+  }
+
+  function renderContactIcons() {
+    return (
+      <>
+        <a
+          className="icon-link"
+          href={`mailto:${contact.email}`}
+          aria-label={t.links.email}
+          data-label={t.links.email}
+        >
+          <Mail aria-hidden="true" size={21} strokeWidth={1.8} />
+        </a>
+        <a
+          className="icon-link"
+          href={contact.github}
+          target="_blank"
+          rel="noreferrer"
+          aria-label={t.links.github}
+          data-label={t.links.github}
+        >
+          <GitHubMark />
+        </a>
+        <button
+          className="icon-link"
+          type="button"
+          onClick={copyWechat}
+          aria-label={t.links.wechat}
+          data-label={t.links.wechat}
+        >
+          <MessageCircle aria-hidden="true" size={21} strokeWidth={1.8} />
+        </button>
+        <span className={`copy-status ${copied ? "is-visible" : ""}`} aria-live="polite">
+          {t.copied}
+        </span>
+      </>
+    );
   }
 
   return (
@@ -220,34 +133,17 @@ export default function Home() {
             </a>
           </div>
         </div>
-        <aside className="analysis-card reveal" aria-label="Profile summary">
-          <div className="axis-line" />
+        <aside className="profile-card reveal" aria-label="Profile snapshot">
+          <p className="section-label">{lang === "en" ? "Snapshot" : "概览"}</p>
           <dl>
-            <div>
-              <dt>Focus</dt>
-              <dd>Insight / Reporting</dd>
-            </div>
-            <div>
-              <dt>Tools</dt>
-              <dd>SQL / Python / BI</dd>
-            </div>
-            <div>
-              <dt>Mode</dt>
-              <dd>Decision support</dd>
-            </div>
+            {t.snapshot.map(([label, value]) => (
+              <div key={label}>
+                <dt>{label}</dt>
+                <dd>{value}</dd>
+              </div>
+            ))}
           </dl>
         </aside>
-      </section>
-
-      <section className="social-strip" aria-label="Profile links">
-        <a href={contact.github} target="_blank" rel="noreferrer">
-          {t.links.github}
-        </a>
-        <span aria-disabled="true">{t.links.linkedin}</span>
-        <a href={`mailto:${contact.email}`}>{t.links.email}</a>
-        <button type="button" onClick={copyWechat}>
-          {copied ? t.copied : t.links.wechat}
-        </button>
       </section>
 
       <section className="content-section section-grid" id="about">
@@ -282,7 +178,7 @@ export default function Home() {
       <section className="content-section section-grid" id="skills">
         <div>
           <p className="section-label">{t.skillsTitle}</p>
-          <h2>SQL, Python, BI, and business context.</h2>
+          <h2>{t.skillsHeading}</h2>
         </div>
         <div className="skills-list">
           {t.skills.map(([group, ...items]) => (
@@ -325,15 +221,8 @@ export default function Home() {
           <p className="section-label">{t.contactTitle}</p>
           <h2>{t.contactBody}</h2>
         </div>
-        <div className="contact-list">
-          <a href={`mailto:${contact.email}`}>{contact.email}</a>
-          <a href={contact.github} target="_blank" rel="noreferrer">
-            github.com/Dycfg
-          </a>
-          <button type="button" onClick={copyWechat}>
-            {copied ? t.copied : t.links.wechat}
-          </button>
-          <a href="/admin">{t.adminLink}</a>
+        <div className="contact-list contact-icons">
+          {renderContactIcons()}
         </div>
       </section>
     </main>

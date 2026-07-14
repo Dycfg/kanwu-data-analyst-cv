@@ -1,4 +1,53 @@
-// Intentionally empty by default.
-// Add Drizzle tables here when the site actually needs a database.
-// See examples/d1/db/schema.ts for an opt-in example.
-export {};
+import { sql } from "drizzle-orm";
+import { index, sqliteTable, text } from "drizzle-orm/sqlite-core";
+
+export const siteContent = sqliteTable("site_content", {
+  id: text("id").primaryKey(),
+  value: text("value").notNull(),
+  updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const adminUsers = sqliteTable("admin_users", {
+  id: text("id").primaryKey(),
+  username: text("username").notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
+  role: text("role", { enum: ["super_admin", "admin"] }).notNull().default("admin"),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const adminSessions = sqliteTable(
+  "admin_sessions",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => adminUsers.id),
+    tokenHash: text("token_hash").notNull().unique(),
+    expiresAt: text("expires_at").notNull(),
+    createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    index("admin_sessions_user_id_idx").on(table.userId),
+    index("admin_sessions_expires_at_idx").on(table.expiresAt),
+  ]
+);
+
+export const trafficEvents = sqliteTable(
+  "traffic_events",
+  {
+    id: text("id").primaryKey(),
+    path: text("path").notNull(),
+    referrer: text("referrer"),
+    country: text("country"),
+    device: text("device").notNull(),
+    browser: text("browser").notNull(),
+    visitorHash: text("visitor_hash").notNull(),
+    createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    index("traffic_events_created_at_idx").on(table.createdAt),
+    index("traffic_events_path_idx").on(table.path),
+    index("traffic_events_visitor_hash_idx").on(table.visitorHash),
+  ]
+);

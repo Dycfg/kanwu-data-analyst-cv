@@ -6,9 +6,9 @@ type RuntimeEnv = {
   CV_BUCKET?: R2Bucket;
 };
 
-const fileByLocale: Record<Locale, { key: string; filename: string }> = {
-  en: { key: "cv/CV_EN.pdf", filename: "KanWu_CV_EN.pdf" },
-  zh: { key: "cv/CV_CN.pdf", filename: "KanWu_CV_CN.pdf" },
+const fileByLocale: Record<Locale, { key: string; filename: string; assetPath: string }> = {
+  en: { key: "cv/CV_EN.pdf", filename: "KanWu_CV_EN.pdf", assetPath: "/CV_EN.pdf" },
+  zh: { key: "cv/CV_CN.pdf", filename: "KanWu_CV_CN.pdf", assetPath: "/CV_CN.pdf" },
 };
 
 function normalizeLocale(value: string | undefined): Locale {
@@ -22,26 +22,22 @@ export async function GET(
   const params = await context.params;
   const locale = normalizeLocale(params.locale);
   const target = fileByLocale[locale];
-  const bucket = (env as unknown as RuntimeEnv).CV_BUCKET;
+  const runtime = env as unknown as RuntimeEnv;
+  const bucket = runtime.CV_BUCKET;
 
-  if (!bucket) {
-    return Response.json(
-      { error: "CV storage is not configured yet." },
-      { status: 503 }
-    );
+  if (bucket) {
+    const file = await bucket.get(target.key);
+
+    if (file?.body) {
+      return new Response(file.body, {
+        headers: {
+          "content-type": "application/pdf",
+          "content-disposition": `inline; filename="${target.filename}"`,
+          "cache-control": "no-store",
+        },
+      });
+    }
   }
 
-  const file = await bucket.get(target.key);
-
-  if (!file?.body) {
-    return Response.json({ error: "CV has not been uploaded yet." }, { status: 404 });
-  }
-
-  return new Response(file.body, {
-    headers: {
-      "content-type": "application/pdf",
-      "content-disposition": `inline; filename="${target.filename}"`,
-      "cache-control": "no-store",
-    },
-  });
+  return Response.redirect(new URL(target.assetPath, _request.url), 302);
 }

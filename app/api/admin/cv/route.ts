@@ -1,11 +1,11 @@
 import { env } from "cloudflare:workers";
+import { requireAdminUser, type AuthRuntimeEnv } from "../../../server/auth-store";
 
 type Locale = "en" | "zh";
 
 type RuntimeEnv = {
-  ADMIN_KEY?: string;
   CV_BUCKET?: R2Bucket;
-};
+} & AuthRuntimeEnv;
 
 const maxPdfSize = 12 * 1024 * 1024;
 
@@ -16,32 +16,6 @@ const fileByLocale: Record<Locale, { key: string; label: string }> = {
 
 function runtimeEnv() {
   return env as unknown as RuntimeEnv;
-}
-
-function isLocalRequest(request: Request) {
-  const host = new URL(request.url).hostname;
-  return host === "localhost" || host === "127.0.0.1";
-}
-
-function expectedAdminKey(request: Request) {
-  return runtimeEnv().ADMIN_KEY ?? (isLocalRequest(request) ? "kanwu-admin" : "");
-}
-
-function authorize(request: Request) {
-  const expected = expectedAdminKey(request);
-
-  if (!expected) {
-    return Response.json(
-      { error: "Admin key is not configured for this deployment." },
-      { status: 503 }
-    );
-  }
-
-  if (request.headers.get("x-admin-key") !== expected) {
-    return Response.json({ error: "Invalid administrator key." }, { status: 401 });
-  }
-
-  return null;
 }
 
 function normalizeLocale(value: FormDataEntryValue | null): Locale | null {
@@ -65,7 +39,13 @@ async function fileStatus(bucket: R2Bucket | undefined, locale: Locale) {
   };
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  const auth = await requireAdminUser(runtimeEnv().DB, request);
+
+  if ("response" in auth) {
+    return auth.response;
+  }
+
   const bucket = runtimeEnv().CV_BUCKET;
 
   return Response.json({
@@ -75,13 +55,13 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const authError = authorize(request);
-
-  if (authError) {
-    return authError;
-  }
-
   const bucket = runtimeEnv().CV_BUCKET;
+
+  const auth = await requireAdminUser(runtimeEnv().DB, request);
+
+  if ("response" in auth) {
+    return auth.response;
+  }
 
   if (!bucket) {
     return Response.json(
@@ -133,13 +113,13 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const authError = authorize(request);
-
-  if (authError) {
-    return authError;
-  }
-
   const bucket = runtimeEnv().CV_BUCKET;
+
+  const auth = await requireAdminUser(runtimeEnv().DB, request);
+
+  if ("response" in auth) {
+    return auth.response;
+  }
 
   if (!bucket) {
     return Response.json(
