@@ -12,6 +12,10 @@ function GitHubMark() {
   );
 }
 
+function displayTitle(text: string) {
+  return text.replace(/[.。]+$/g, "");
+}
+
 export default function Home() {
   const [lang, setLang] = useState<Lang>("en");
   const [siteContent, setSiteContent] = useState<SiteContent>(defaultSiteContent);
@@ -166,7 +170,7 @@ export default function Home() {
               <span key={line}>{line}</span>
             ))}
           </h1>
-          <p className="hero-tagline">{t.tagline}</p>
+          <p className="hero-tagline">{displayTitle(t.tagline)}</p>
           <p className="hero-intro">{t.intro}</p>
           <div className="button-row">
             <a className="button primary" href={cvHref}>
@@ -210,7 +214,7 @@ export default function Home() {
       <section className="content-section section-grid" id="about">
         <div>
           <p className="section-label">{t.aboutTitle}</p>
-          <h2>{t.aboutKicker}</h2>
+          <h2>{displayTitle(t.aboutKicker)}</h2>
         </div>
         <div className="prose-stack">
           {t.aboutBody.map((paragraph) => (
@@ -222,7 +226,7 @@ export default function Home() {
       <section className="content-section" id="experience">
         <div className="section-heading">
           <p className="section-label">{t.experienceTitle}</p>
-          <h2>{t.experienceKicker}</h2>
+          <h2>{displayTitle(t.experienceKicker)}</h2>
           <p>{t.experienceNote}</p>
         </div>
         <div className="experience-grid">
@@ -244,7 +248,7 @@ export default function Home() {
       <section className="content-section section-grid" id="skills">
         <div>
           <p className="section-label">{t.skillsTitle}</p>
-          <h2>{t.skillsHeading}</h2>
+          <h2>{displayTitle(t.skillsHeading)}</h2>
         </div>
         <div className="skills-list">
           {t.skills.map(([group, ...items]) => (
@@ -259,7 +263,7 @@ export default function Home() {
       <section className="content-section" id="projects">
         <div className="section-heading">
           <p className="section-label">{t.projectsTitle}</p>
-          <h2>{t.projectsKicker}</h2>
+          <h2>{displayTitle(t.projectsKicker)}</h2>
         </div>
         <div className="project-grid">
           {t.projects.map((project) => (
@@ -275,7 +279,7 @@ export default function Home() {
       <section className="content-section section-grid cv-band" id="cv">
         <div>
           <p className="section-label">{t.cvTitle}</p>
-          <h2>{t.cvBody}</h2>
+          <h2>{displayTitle(t.cvBody)}</h2>
         </div>
         <div className="cv-action-stack">
           <a className="cv-mini-preview" href={cvHref} aria-label={t.cvButton}>
@@ -291,7 +295,7 @@ export default function Home() {
       <section className="content-section section-grid contact-band" id="contact">
         <div>
           <p className="section-label">{t.contactTitle}</p>
-          <h2>{t.contactBody}</h2>
+          <h2>{displayTitle(t.contactBody)}</h2>
         </div>
         <div className="contact-list contact-icons">
           {renderContactIcons()}
