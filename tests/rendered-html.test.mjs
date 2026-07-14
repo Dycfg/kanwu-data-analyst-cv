@@ -25,6 +25,7 @@ test("defines the bilingual public CV site", async () => {
   assert.match(page, /Analytical workflow/);
   assert.match(page, /workflowSteps/);
   assert.match(page, /workflow-board/);
+  assert.match(page, /section-index/);
   assert.match(page, /signalMetrics/);
   assert.match(page, /cv-mini-preview/);
   assert.doesNotMatch(page, /social-strip|Profile links/);

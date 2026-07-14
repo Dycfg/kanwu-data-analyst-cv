@@ -16,6 +16,15 @@ function displayTitle(text: string) {
   return text.replace(/[.。]+$/g, "");
 }
 
+function SectionLabel({ index, label }: { index: string; label: string }) {
+  return (
+    <p className="section-label indexed-label">
+      <span className="section-index">{index}</span>
+      <span>{label}</span>
+    </p>
+  );
+}
+
 export default function Home() {
   const [lang, setLang] = useState<Lang>("en");
   const [siteContent, setSiteContent] = useState<SiteContent>(defaultSiteContent);
@@ -213,7 +222,7 @@ export default function Home() {
 
       <section className="content-section section-grid" id="about">
         <div>
-          <p className="section-label">{t.aboutTitle}</p>
+          <SectionLabel index="01" label={t.aboutTitle} />
           <h2>{displayTitle(t.aboutKicker)}</h2>
         </div>
         <div className="prose-stack">
@@ -225,7 +234,7 @@ export default function Home() {
 
       <section className="content-section" id="experience">
         <div className="section-heading">
-          <p className="section-label">{t.experienceTitle}</p>
+          <SectionLabel index="02" label={t.experienceTitle} />
           <h2>{displayTitle(t.experienceKicker)}</h2>
           <p>{t.experienceNote}</p>
         </div>
@@ -247,7 +256,7 @@ export default function Home() {
 
       <section className="content-section section-grid" id="skills">
         <div>
-          <p className="section-label">{t.skillsTitle}</p>
+          <SectionLabel index="03" label={t.skillsTitle} />
           <h2>{displayTitle(t.skillsHeading)}</h2>
         </div>
         <div className="skills-list">
@@ -262,7 +271,7 @@ export default function Home() {
 
       <section className="content-section" id="projects">
         <div className="section-heading">
-          <p className="section-label">{t.projectsTitle}</p>
+          <SectionLabel index="04" label={t.projectsTitle} />
           <h2>{displayTitle(t.projectsKicker)}</h2>
         </div>
         <div className="project-grid">
@@ -278,7 +287,7 @@ export default function Home() {
 
       <section className="content-section section-grid cv-band" id="cv">
         <div>
-          <p className="section-label">{t.cvTitle}</p>
+          <SectionLabel index="05" label={t.cvTitle} />
           <h2>{displayTitle(t.cvBody)}</h2>
         </div>
         <div className="cv-action-stack">
@@ -294,7 +303,7 @@ export default function Home() {
 
       <section className="content-section section-grid contact-band" id="contact">
         <div>
-          <p className="section-label">{t.contactTitle}</p>
+          <SectionLabel index="06" label={t.contactTitle} />
           <h2>{displayTitle(t.contactBody)}</h2>
         </div>
         <div className="contact-list contact-icons">

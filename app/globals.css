@@ -191,20 +191,43 @@ button {
 }
 
 .content-section .section-label {
-  display: flex;
+  display: inline-grid;
+  grid-template-columns: auto auto;
   align-items: center;
-  gap: 16px;
+  gap: 11px;
   margin-bottom: 18px;
 }
 
-.content-section .section-label::after {
-  width: clamp(44px, 9vw, 132px);
-  height: 1px;
-  background: var(--line);
-  content: "";
-  transform: scaleX(0);
-  transform-origin: left;
-  animation: label-rule 640ms ease both;
+.indexed-label {
+  transition:
+    color 180ms ease,
+    transform 180ms ease;
+}
+
+.section-index {
+  display: inline-grid;
+  min-width: 34px;
+  min-height: 24px;
+  place-items: center;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  font-weight: 560;
+  line-height: 1;
+  transition:
+    border-color 180ms ease,
+    color 180ms ease,
+    transform 180ms ease;
+}
+
+.content-section:hover .indexed-label {
+  transform: translateY(-1px);
+}
+
+.content-section:hover .section-index {
+  border-color: var(--ink);
+  color: var(--ink);
 }
 
 h1,
@@ -1387,12 +1410,6 @@ h3 {
 }
 
 @keyframes page-progress {
-  to {
-    transform: scaleX(1);
-  }
-}
-
-@keyframes label-rule {
   to {
     transform: scaleX(1);
   }
