@@ -161,7 +161,7 @@ export default function Home() {
       <section className="hero section-grid" id="top">
         <div className="hero-copy reveal">
           <p className="eyebrow">{t.eyebrow}</p>
-          <h1 className="hero-title">
+          <h1 className={`hero-title ${lang === "zh" ? "is-zh" : "is-en"}`}>
             {roleLines.map((line) => (
               <span key={line}>{line}</span>
             ))}
