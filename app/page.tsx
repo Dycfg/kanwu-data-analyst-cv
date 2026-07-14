@@ -19,6 +19,32 @@ export default function Home() {
   const t = siteContent[lang];
   const contact = siteContent.contact;
   const cvHref = useMemo(() => `/cv?lang=${lang}`, [lang]);
+  const roleLines = lang === "en" ? t.role.split(" ") : ["数据", "分析师"];
+  const cvPreview = lang === "en" ? "/cv-preview-en.png" : "/cv-preview-cn.png";
+  const signalMetrics =
+    lang === "en"
+      ? [
+          ["20+", "reports"],
+          ["5,000+", "records"],
+          ["15+", "visuals"],
+        ]
+      : [
+          ["20+", "报告"],
+          ["5,000+", "数据"],
+          ["15+", "图表"],
+        ];
+  const experienceSignals =
+    lang === "en"
+      ? [
+          ["Market research", "5,000+ records", "15+ visuals"],
+          ["Backend support", "3,000+ records", "GIS data"],
+          ["Statistics", "LMM", "GIS analysis"],
+        ]
+      : [
+          ["市场研究", "5,000+ 数据", "15+ 图表"],
+          ["后端支持", "3,000+ 数据", "GIS 数据"],
+          ["统计建模", "线性混合模型", "空间分析"],
+        ];
 
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get("lang") === "zh") {
@@ -121,7 +147,11 @@ export default function Home() {
       <section className="hero section-grid" id="top">
         <div className="hero-copy reveal">
           <p className="eyebrow">{t.eyebrow}</p>
-          <h1>{t.role}</h1>
+          <h1 className="hero-title">
+            {roleLines.map((line) => (
+              <span key={line}>{line}</span>
+            ))}
+          </h1>
           <p className="hero-tagline">{t.tagline}</p>
           <p className="hero-intro">{t.intro}</p>
           <div className="button-row">
@@ -133,8 +163,23 @@ export default function Home() {
             </a>
           </div>
         </div>
-        <aside className="profile-card reveal" aria-label="Profile snapshot">
-          <p className="section-label">{lang === "en" ? "Snapshot" : "概览"}</p>
+        <aside className="signature-panel reveal" aria-label="Data analyst signal">
+          <p className="section-label">{lang === "en" ? "Signal" : "信号"}</p>
+          <div className="signal-chart" aria-hidden="true">
+            <span className="signal-segment signal-segment-one" />
+            <span className="signal-segment signal-segment-two" />
+            <span className="signal-point point-one" />
+            <span className="signal-point point-two" />
+            <span className="signal-point point-three" />
+          </div>
+          <div className="signal-metrics" aria-label={lang === "en" ? "Selected metrics" : "精选数据"}>
+            {signalMetrics.map(([value, label]) => (
+              <div key={label}>
+                <strong>{value}</strong>
+                <span>{label}</span>
+              </div>
+            ))}
+          </div>
           <dl>
             {t.snapshot.map(([label, value]) => (
               <div key={label}>
@@ -165,10 +210,15 @@ export default function Home() {
           <p>{t.experienceNote}</p>
         </div>
         <div className="experience-grid">
-          {t.experienceCards.map((item) => (
+          {t.experienceCards.map((item, index) => (
             <article className="line-card" key={item.title}>
               <p>{item.label}</p>
               <h3>{item.title}</h3>
+              <div className="impact-list" aria-label={lang === "en" ? "Experience focus" : "经历重点"}>
+                {experienceSignals[index]?.map((signal) => (
+                  <span key={signal}>{signal}</span>
+                ))}
+              </div>
               <span>{item.body}</span>
             </article>
           ))}
@@ -211,9 +261,15 @@ export default function Home() {
           <p className="section-label">{t.cvTitle}</p>
           <h2>{t.cvBody}</h2>
         </div>
-        <a className="button primary" href={cvHref}>
-          {t.cvButton}
-        </a>
+        <div className="cv-action-stack">
+          <a className="cv-mini-preview" href={cvHref} aria-label={t.cvButton}>
+            <span>{lang === "en" ? "Current PDF" : "当前 PDF"}</span>
+            <img src={cvPreview} alt="" />
+          </a>
+          <a className="button primary" href={cvHref}>
+            {t.cvButton}
+          </a>
+        </div>
       </section>
 
       <section className="content-section section-grid contact-band" id="contact">
