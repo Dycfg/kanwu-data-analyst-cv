@@ -22,7 +22,9 @@ test("defines the bilingual public CV site", async () => {
   assert.match(page, /lucide-react/);
   assert.match(page, /MessageCircle/);
   assert.match(page, /\/cv\?lang=\$\{lang\}/);
-  assert.match(page, /Data analyst signal/);
+  assert.match(page, /Analytical workflow/);
+  assert.match(page, /workflowSteps/);
+  assert.match(page, /workflow-board/);
   assert.match(page, /signalMetrics/);
   assert.match(page, /cv-mini-preview/);
   assert.doesNotMatch(page, /social-strip|Profile links/);

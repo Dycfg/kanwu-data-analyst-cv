@@ -21,6 +21,20 @@ export default function Home() {
   const cvHref = useMemo(() => `/cv?lang=${lang}`, [lang]);
   const roleLines = lang === "en" ? t.role.split(" ") : ["数据", "分析师"];
   const cvPreview = lang === "en" ? "/cv-preview-en.png" : "/cv-preview-cn.png";
+  const workflowSteps =
+    lang === "en"
+      ? [
+          ["01", "Question", "Frame the business metric"],
+          ["02", "Data", "Clean and structure records"],
+          ["03", "Analysis", "Model patterns and drivers"],
+          ["04", "Decision", "Report clear next steps"],
+        ]
+      : [
+          ["01", "问题", "明确业务指标"],
+          ["02", "数据", "清洗并结构化记录"],
+          ["03", "分析", "建模识别关键因素"],
+          ["04", "决策", "输出清晰行动建议"],
+        ];
   const signalMetrics =
     lang === "en"
       ? [
@@ -163,14 +177,16 @@ export default function Home() {
             </a>
           </div>
         </div>
-        <aside className="signature-panel reveal" aria-label="Data analyst signal">
-          <p className="section-label">{lang === "en" ? "Signal" : "信号"}</p>
-          <div className="signal-chart" aria-hidden="true">
-            <span className="signal-segment signal-segment-one" />
-            <span className="signal-segment signal-segment-two" />
-            <span className="signal-point point-one" />
-            <span className="signal-point point-two" />
-            <span className="signal-point point-three" />
+        <aside className="signature-panel reveal" aria-label="Analytical workflow">
+          <p className="section-label">{lang === "en" ? "Workflow" : "工作流"}</p>
+          <div className="workflow-board" aria-label={lang === "en" ? "Analytical workflow" : "分析工作流"}>
+            {workflowSteps.map(([step, title, body]) => (
+              <div className="workflow-step" key={step}>
+                <span>{step}</span>
+                <strong>{title}</strong>
+                <p>{body}</p>
+              </div>
+            ))}
           </div>
           <div className="signal-metrics" aria-label={lang === "en" ? "Selected metrics" : "精选数据"}>
             {signalMetrics.map(([value, label]) => (

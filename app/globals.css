@@ -30,6 +30,7 @@ body {
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
   letter-spacing: 0;
   font-feature-settings: "kern";
+  text-rendering: geometricPrecision;
 }
 
 a {
@@ -108,7 +109,8 @@ button {
   justify-content: center;
   gap: clamp(12px, 2vw, 28px);
   color: var(--muted);
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 450;
 }
 
 .main-nav a,
@@ -175,7 +177,8 @@ button {
   margin: 0;
   color: var(--muted);
   font-family: var(--font-mono), monospace;
-  font-size: 12px;
+  font-size: 11px;
+  font-weight: 560;
   line-height: 1.4;
   text-transform: uppercase;
 }
@@ -191,8 +194,8 @@ h1 {
   max-width: 11ch;
   margin-bottom: 28px;
   font-size: clamp(64px, 13vw, 176px);
-  font-weight: 640;
-  line-height: 0.86;
+  font-weight: 680;
+  line-height: 0.84;
 }
 
 .hero-title {
@@ -211,25 +214,26 @@ h1 {
 }
 
 h2 {
-  max-width: 760px;
+  max-width: 720px;
   margin-bottom: 0;
-  font-size: clamp(28px, 5vw, 64px);
-  font-weight: 520;
-  line-height: 0.98;
+  font-size: clamp(30px, 4.6vw, 58px);
+  font-weight: 620;
+  line-height: 1.02;
 }
 
 h3 {
   margin-bottom: 16px;
-  font-size: 22px;
-  font-weight: 560;
-  line-height: 1.08;
+  font-size: 24px;
+  font-weight: 620;
+  line-height: 1.1;
 }
 
 .hero-tagline {
-  max-width: 760px;
+  max-width: 720px;
   margin-bottom: 20px;
-  font-size: clamp(22px, 3.4vw, 42px);
-  line-height: 1.05;
+  font-size: clamp(24px, 3.2vw, 40px);
+  font-weight: 560;
+  line-height: 1.12;
 }
 
 .hero-intro,
@@ -242,8 +246,8 @@ h3 {
 .line-card span,
 .contact-band h2 {
   color: var(--muted);
-  font-size: 17px;
-  line-height: 1.65;
+  font-size: 16px;
+  line-height: 1.78;
 }
 
 .hero-intro {
@@ -312,69 +316,73 @@ h3 {
   transform: translateY(-3px);
 }
 
-.signal-chart {
-  position: relative;
-  height: 176px;
+.workflow-board {
+  display: grid;
   margin: 34px 0 24px;
-  border-bottom: 1px solid var(--ink);
-  border-left: 1px solid var(--ink);
-  background:
-    linear-gradient(color-mix(in srgb, var(--line) 52%, transparent) 1px, transparent 1px) 0 0 / 100% 25%,
-    linear-gradient(90deg, color-mix(in srgb, var(--line) 42%, transparent) 1px, transparent 1px) 0 0 / 25% 100%;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--paper) 66%, white);
 }
 
-.signal-segment {
+.workflow-step {
+  position: relative;
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 4px 14px;
+  min-height: 72px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+  animation: workflow-enter 520ms ease both;
+}
+
+.workflow-step:last-child {
+  border-bottom: 0;
+}
+
+.workflow-step:nth-child(2) {
+  animation-delay: 70ms;
+}
+
+.workflow-step:nth-child(3) {
+  animation-delay: 140ms;
+}
+
+.workflow-step:nth-child(4) {
+  animation-delay: 210ms;
+}
+
+.workflow-step::before {
   position: absolute;
-  height: 3px;
+  inset: 0 auto 0 0;
+  width: 2px;
   background: var(--ink);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ink) 8%, transparent);
-  transform-origin: left center;
-  animation: signal-draw 900ms cubic-bezier(0.22, 0.7, 0.15, 1) both;
+  content: "";
+  transform: scaleY(0);
+  transform-origin: top;
+  transition: transform 180ms ease;
 }
 
-.signal-segment-one {
-  bottom: 24px;
-  left: 12%;
-  width: 39%;
-  transform: rotate(-44deg) scaleX(0);
+.workflow-step:hover::before {
+  transform: scaleY(1);
 }
 
-.signal-segment-two {
-  bottom: 103px;
-  left: 47%;
-  width: 40%;
-  transform: rotate(-40deg) scaleX(0);
-  animation-delay: 360ms;
+.workflow-step > span {
+  grid-row: 1 / 3;
+  color: var(--muted);
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
 }
 
-.signal-point {
-  position: absolute;
-  width: 9px;
-  height: 9px;
-  border: 1px solid var(--paper);
-  border-radius: 50%;
-  background: var(--ink);
-  opacity: 0;
-  transform: scale(0.6);
-  animation: point-pop 280ms ease both;
+.workflow-step strong {
+  font-size: clamp(18px, 2.2vw, 24px);
+  font-weight: 620;
+  line-height: 1;
 }
 
-.point-one {
-  bottom: 20px;
-  left: 11%;
-  animation-delay: 230ms;
-}
-
-.point-two {
-  bottom: 98px;
-  left: 48%;
-  animation-delay: 620ms;
-}
-
-.point-three {
-  top: 14px;
-  right: 10%;
-  animation-delay: 880ms;
+.workflow-step p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
 }
 
 .signal-metrics {
@@ -430,6 +438,7 @@ h3 {
 .signature-panel dd {
   margin: 0;
   font-size: clamp(20px, 2.4vw, 30px);
+  font-weight: 560;
   line-height: 1.08;
 }
 
@@ -461,8 +470,10 @@ h3 {
 .icon-link:hover,
 .icon-link:focus-visible {
   transform: translateY(-2px);
-  background: var(--ink);
-  color: var(--reverse);
+  border-color: var(--ink);
+  background: color-mix(in srgb, var(--ink) 5%, transparent);
+  color: var(--ink);
+  box-shadow: 0 12px 32px color-mix(in srgb, var(--ink) 8%, transparent);
 }
 
 .icon-link::after {
@@ -525,6 +536,10 @@ h3 {
 
 .section-heading h2 {
   margin: 8px 0 18px;
+}
+
+.section-heading p:not(.section-label) {
+  max-width: 620px;
 }
 
 .prose-stack {
@@ -621,12 +636,15 @@ h3 {
 }
 
 .skill-row strong {
-  font-weight: 560;
+  font-size: 18px;
+  font-weight: 620;
+  line-height: 1.2;
 }
 
 .skill-row span {
   color: var(--muted);
-  line-height: 1.55;
+  font-size: 15px;
+  line-height: 1.6;
 }
 
 .project-card {
@@ -1339,25 +1357,16 @@ h3 {
   }
 }
 
-@keyframes signal-draw {
-  to {
-    transform: rotate(var(--angle, -42deg)) scaleX(1);
+@keyframes workflow-enter {
+  from {
+    opacity: 0;
+    transform: translateX(10px);
   }
-}
 
-@keyframes point-pop {
   to {
     opacity: 1;
-    transform: scale(1);
+    transform: translateX(0);
   }
-}
-
-.signal-segment-one {
-  --angle: -44deg;
-}
-
-.signal-segment-two {
-  --angle: -40deg;
 }
 
 @keyframes paper-enter {
