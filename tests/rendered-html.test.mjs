@@ -102,6 +102,7 @@ test("keeps CV and admin upload routes wired", async () => {
   assert.match(adminPage, /traffic-grid/);
   assert.match(adminPage, /traffic-tooltip/);
   assert.match(adminPage, /traffic-hit-zone/);
+  assert.doesNotMatch(adminPage, /className="traffic-hit-zone"[\s\S]{0,180}tabIndex/);
   assert.match(adminPage, /Selected point/);
   assert.match(adminPage, /onMouseEnter/);
   assert.match(adminPage, /visitors/);
@@ -115,6 +116,8 @@ test("keeps CV and admin upload routes wired", async () => {
   assert.match(adminPage, /Encrypted/);
   assert.match(adminPage, /Reset only/);
   assert.match(adminPage, /New username/);
+  assert.match(adminPage, /currentUserIsRoot/);
+  assert.match(adminPage, /window\.alert\("Super administrators cannot be deleted\."/);
   assert.match(adminPage, /Upload \$\{labels\[locale\]\}/);
   assert.match(adminPage, /en:\s*"English CV"/);
   assert.match(adminPage, /removeCv/);
@@ -147,6 +150,7 @@ test("keeps CV and admin upload routes wired", async () => {
   assert.match(loginApi, /Set-Cookie/);
   assert.match(usersApi, /requireSuperAdmin/);
   assert.match(usersApi, /createAdminUser/);
+  assert.match(usersApi, /auth\.user/);
   assert.match(userApi, /deleteAdminUser/);
   assert.match(userApi, /updateAdminUser/);
   assert.match(passwordApi, /changeOwnPassword/);
@@ -154,6 +158,12 @@ test("keeps CV and admin upload routes wired", async () => {
   assert.match(authStore, /admin_sessions/);
   assert.match(authStore, /PBKDF2/);
   assert.match(authStore, /password_hash/);
+  assert.match(authStore, /rootAdminUsername = "admin"/);
+  assert.match(authStore, /Permission denied/);
+  assert.match(authStore, /Only the root administrator can create super administrators/);
+  assert.match(authStore, /Only the root administrator can promote super administrators/);
+  assert.match(authStore, /Super administrators cannot be deleted/);
+  assert.match(authStore, /isRootSuperAdmin/);
   assert.match(authStore, /Password must be at least 10 characters/);
   assert.match(authStore, /Password is required/);
   assert.match(authStore, /Password must include an uppercase letter/);

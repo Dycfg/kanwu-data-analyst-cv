@@ -19,6 +19,7 @@ const passwordAlgorithm = "pbkdf2_sha256";
 const passwordIterations = 210_000;
 const sessionDays = 7;
 const defaultLocalAdminPassword = "Kanwu-Admin#2026";
+const rootAdminUsername = "admin";
 
 type AdminUserRow = AdminUser & {
   passwordHash: string;
@@ -174,7 +175,7 @@ export async function requireSuperAdmin(db: D1Database | undefined, request: Req
   }
 
   if (result.user.role !== "super_admin") {
-    return { response: Response.json({ error: "Super administrator access required." }, { status: 403 }) };
+    return { response: Response.json({ error: "Permission denied." }, { status: 403 }) };
   }
 
   return result;
@@ -194,11 +195,16 @@ export async function listAdminUsers(db: D1Database) {
 
 export async function createAdminUser(
   db: D1Database,
-  input: { username: string; password: string; role: AdminRole }
+  input: { username: string; password: string; role: AdminRole },
+  actor?: AdminUser
 ) {
   await ensureAuthTables(db);
   validateUsername(input.username);
   validatePassword(input.password);
+
+  if (input.role === "super_admin" && actor && !isRootSuperAdmin(actor)) {
+    throw new Error("Only the root administrator can create super administrators.");
+  }
 
   const user: AdminUser = {
     id: crypto.randomUUID(),
@@ -237,11 +243,25 @@ export async function updateAdminUser(
   const nextPasswordHash = input.password
     ? await hashPassword(validatePassword(input.password))
     : existing.passwordHash;
+  const targetIsRoot = isRootSuperAdmin(existing);
+  const actorIsRoot = isRootSuperAdmin(actor);
 
   validateUsername(nextUsername);
 
-  if (existing.role === "super_admin" && nextRole !== "super_admin") {
-    await assertCanRemoveSuperAdmin(db, id);
+  if (targetIsRoot && actor.id !== existing.id) {
+    throw new Error("Root administrator cannot be modified by another account.");
+  }
+
+  if (targetIsRoot && (nextUsername !== rootAdminUsername || nextRole !== "super_admin")) {
+    throw new Error("Root administrator cannot be renamed or demoted.");
+  }
+
+  if (existing.role === "super_admin" && !actorIsRoot && actor.id !== existing.id) {
+    throw new Error("Only the root administrator can manage super administrators.");
+  }
+
+  if (nextRole === "super_admin" && existing.role !== "super_admin" && !actorIsRoot) {
+    throw new Error("Only the root administrator can promote super administrators.");
   }
 
   await db
@@ -274,7 +294,7 @@ export async function deleteAdminUser(db: D1Database, id: string) {
   }
 
   if (existing.role === "super_admin") {
-    await assertCanRemoveSuperAdmin(db, id);
+    throw new Error("Super administrators cannot be deleted.");
   }
 
   await db.batch([
@@ -326,15 +346,8 @@ async function getUserById(db: D1Database, id: string) {
     .first<AdminUserRow>();
 }
 
-async function assertCanRemoveSuperAdmin(db: D1Database, id: string) {
-  const row = await db
-    .prepare("SELECT COUNT(*) AS count FROM admin_users WHERE role = 'super_admin' AND id != ?")
-    .bind(id)
-    .first<{ count: number }>();
-
-  if ((row?.count ?? 0) < 1) {
-    throw new Error("Keep at least one super administrator.");
-  }
+export function isRootSuperAdmin(user: Pick<AdminUser, "username" | "role">) {
+  return user.username === rootAdminUsername && user.role === "super_admin";
 }
 
 function toPublicUser(row: AdminUserRow | AdminUser): AdminUser {

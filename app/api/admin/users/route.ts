@@ -51,7 +51,7 @@ export async function POST(request: Request) {
       username: payload.username ?? "",
       password: payload.password ?? "",
       role: payload.role === "super_admin" ? "super_admin" : "admin",
-    });
+    }, auth.user);
 
     return Response.json({ user, message: "User created." });
   } catch (error) {

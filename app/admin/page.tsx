@@ -247,13 +247,10 @@ function TrafficVisualization({ period, items }: { period: TrafficPeriod; items:
               className="traffic-hit-zone"
               height={height - padding.top - padding.bottom}
               key={`${point.item.date}-zone-${index}`}
-              role="button"
-              tabIndex={0}
               width={hitWidth}
               x={x}
               y={padding.top}
               onClick={() => setActiveIndex(index)}
-              onFocus={() => setActiveIndex(index)}
               onMouseEnter={() => setActiveIndex(index)}
             />
           );
@@ -410,13 +407,15 @@ export default function AdminPage() {
       return;
     }
 
+    const requestedRole = currentUser && isRootSuperAdmin(currentUser) ? newUser.role : "admin";
+
     try {
       const response = await fetch("/api/admin/users", {
         method: "POST",
         headers: {
           "content-type": "application/json",
         },
-        body: JSON.stringify(newUser),
+        body: JSON.stringify({ ...newUser, role: requestedRole }),
       });
       const payload = await readJson<{ message?: string }>(response);
 
@@ -465,6 +464,12 @@ export default function AdminPage() {
   }
 
   async function deleteUser(user: AdminUser) {
+    if (user.role === "super_admin") {
+      window.alert("Super administrators cannot be deleted.");
+      setMessage("Super administrators cannot be deleted.");
+      return;
+    }
+
     setBusy(true);
     setMessage("");
 
@@ -530,6 +535,10 @@ export default function AdminPage() {
     return (user as DraftedAdminUser).usernameDraft ?? "";
   }
 
+  function isRootSuperAdmin(user: Pick<AdminUser, "username" | "role">) {
+    return user.username === "admin" && user.role === "super_admin";
+  }
+
   if (!currentUser) {
     return (
       <main className="admin-page">
@@ -546,6 +555,7 @@ export default function AdminPage() {
     analytics?.[trafficPeriod].length
       ? analytics[trafficPeriod]
       : [{ date: "No data", views: 0, visitors: 0 }];
+  const currentUserIsRoot = isRootSuperAdmin(currentUser);
 
   async function uploadCv(event: FormEvent<HTMLFormElement>, locale: "en" | "zh") {
     event.preventDefault();
@@ -920,7 +930,7 @@ export default function AdminPage() {
                   }
                 >
                   <option value="admin">Administrator</option>
-                  <option value="super_admin">Super administrator</option>
+                  {currentUserIsRoot && <option value="super_admin">Super administrator</option>}
                 </select>
               </label>
               <button className="button primary" type="submit" disabled={busy}>
@@ -953,11 +963,14 @@ export default function AdminPage() {
                 <label>
                   <span>Role</span>
                   <select
+                    disabled={!currentUserIsRoot && user.role === "super_admin"}
                     value={user.role}
                     onChange={(event) => updateUserRoleDraft(user.id, event.target.value as AdminRole)}
                   >
                     <option value="admin">Administrator</option>
-                    <option value="super_admin">Super administrator</option>
+                    {(currentUserIsRoot || user.role === "super_admin") && (
+                      <option value="super_admin">Super administrator</option>
+                    )}
                   </select>
                 </label>
                 <label>
@@ -973,7 +986,7 @@ export default function AdminPage() {
                   <button
                     className="button secondary"
                     type="button"
-                    disabled={busy}
+                    disabled={busy || (!currentUserIsRoot && user.role === "super_admin")}
                     onClick={() => updateUser(user, "username", getUserUsernameDraft(user))}
                   >
                     Save name
@@ -981,7 +994,7 @@ export default function AdminPage() {
                   <button
                     className="button secondary"
                     type="button"
-                    disabled={busy}
+                    disabled={busy || (!currentUserIsRoot && user.role === "super_admin")}
                     onClick={() => updateUser(user, "role", user.role)}
                   >
                     Save role
@@ -989,7 +1002,7 @@ export default function AdminPage() {
                   <button
                     className="button secondary"
                     type="button"
-                    disabled={busy || !getUserPasswordDraft(user)}
+                    disabled={busy || !getUserPasswordDraft(user) || (!currentUserIsRoot && user.role === "super_admin")}
                     onClick={() => updateUser(user, "password", getUserPasswordDraft(user))}
                   >
                     Reset password
@@ -997,7 +1010,7 @@ export default function AdminPage() {
                   <button
                     className="button secondary"
                     type="button"
-                    disabled={busy || user.id === currentUser.id}
+                    disabled={busy}
                     onClick={() => deleteUser(user)}
                   >
                     Delete

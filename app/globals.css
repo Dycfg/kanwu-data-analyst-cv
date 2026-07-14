@@ -1212,7 +1212,7 @@ h3 {
 }
 
 .editor-grid.four {
-  grid-template-columns: minmax(150px, 0.7fr) minmax(160px, 0.8fr) minmax(150px, 0.5fr) auto;
+  grid-template-columns: minmax(150px, 0.7fr) minmax(180px, 0.8fr) minmax(220px, 0.55fr) auto;
   align-items: end;
 }
 
@@ -1261,6 +1261,8 @@ h3 {
 .nested-editor select,
 .admin-key select {
   appearance: none;
+  min-width: 0;
+  padding-right: 18px;
 }
 
 .editor-card select:hover,
@@ -1333,7 +1335,7 @@ h3 {
 
 .user-row {
   display: grid;
-  grid-template-columns: minmax(160px, 0.65fr) minmax(130px, 0.45fr) minmax(140px, 0.55fr) minmax(120px, 0.42fr) minmax(180px, 0.7fr) minmax(240px, 1fr);
+  grid-template-columns: minmax(160px, 0.65fr) minmax(130px, 0.45fr) minmax(150px, 0.55fr) minmax(220px, 0.62fr) minmax(190px, 0.7fr) minmax(240px, 1fr);
   gap: 12px;
   align-items: end;
 }
@@ -1609,14 +1611,13 @@ h3 {
 .traffic-hit-zone {
   cursor: crosshair;
   fill: transparent;
+  outline: none;
   pointer-events: all;
 }
 
+.traffic-hit-zone:focus,
 .traffic-hit-zone:focus-visible {
   outline: none;
-  stroke: color-mix(in srgb, var(--ink) 34%, transparent);
-  stroke-dasharray: 4 5;
-  stroke-width: 1;
 }
 
 .traffic-axis-labels {
