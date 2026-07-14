@@ -34,6 +34,7 @@ type AnalyticsSummary = {
 
 type TrafficPeriod = "daily" | "weekly" | "monthly";
 type TrafficItem = { date: string; views: number; visitors: number };
+type InsightItem = { label: string; views: number };
 type DraftedAdminUser = AdminUser & {
   newPassword?: string;
   usernameDraft?: string;
@@ -264,6 +265,25 @@ function TrafficVisualization({ period, items }: { period: TrafficPeriod; items:
         ))}
       </div>
     </div>
+  );
+}
+
+function AnalyticsInsightList({ items, title }: { items: InsightItem[]; title: string }) {
+  const maxViews = Math.max(1, ...items.map((item) => item.views));
+
+  return (
+    <section className="analytics-insight">
+      <p className="section-label">{title}</p>
+      <div>
+        {items.map((item) => (
+          <p key={item.label}>
+            <span>{item.label}</span>
+            <i style={{ width: `${Math.max(6, (item.views / maxViews) * 100)}%` }} />
+            <strong>{item.views}</strong>
+          </p>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -556,6 +576,32 @@ export default function AdminPage() {
       ? analytics[trafficPeriod]
       : [{ date: "No data", views: 0, visitors: 0 }];
   const currentUserIsRoot = isRootSuperAdmin(currentUser);
+  const insightGroups = [
+    {
+      title: "Top pages",
+      items: analytics?.topPages.length
+        ? analytics.topPages.map((item) => ({ label: item.path, views: item.views }))
+        : [{ label: "No visits yet", views: 0 }],
+    },
+    {
+      title: "Sources",
+      items: analytics?.referrers.length
+        ? analytics.referrers.map((item) => ({ label: item.referrer, views: item.views }))
+        : [{ label: "Direct", views: 0 }],
+    },
+    {
+      title: "Devices",
+      items: analytics?.devices.length
+        ? analytics.devices.map((item) => ({ label: item.device, views: item.views }))
+        : [{ label: "No data", views: 0 }],
+    },
+    {
+      title: "Browsers",
+      items: analytics?.browsers.length
+        ? analytics.browsers.map((item) => ({ label: item.browser, views: item.views }))
+        : [{ label: "No data", views: 0 }],
+    },
+  ];
 
   async function uploadCv(event: FormEvent<HTMLFormElement>, locale: "en" | "zh") {
     event.preventDefault();
@@ -842,42 +888,9 @@ export default function AdminPage() {
         </div>
         <TrafficVisualization period={trafficPeriod} items={trafficItems} />
         <div className="analytics-lists">
-          <div>
-            <p className="section-label">Top pages</p>
-            {(analytics?.topPages.length ? analytics.topPages : [{ path: "No visits yet", views: 0 }]).map((item) => (
-              <p key={item.path}>
-                <span>{item.path}</span>
-                <strong>{item.views}</strong>
-              </p>
-            ))}
-          </div>
-          <div>
-            <p className="section-label">Sources</p>
-            {(analytics?.referrers.length ? analytics.referrers : [{ referrer: "Direct", views: 0 }]).map((item) => (
-              <p key={item.referrer}>
-                <span>{item.referrer}</span>
-                <strong>{item.views}</strong>
-              </p>
-            ))}
-          </div>
-          <div>
-            <p className="section-label">Devices</p>
-            {(analytics?.devices.length ? analytics.devices : [{ device: "No data", views: 0 }]).map((item) => (
-              <p key={item.device}>
-                <span>{item.device}</span>
-                <strong>{item.views}</strong>
-              </p>
-            ))}
-          </div>
-          <div>
-            <p className="section-label">Browsers</p>
-            {(analytics?.browsers.length ? analytics.browsers : [{ browser: "No data", views: 0 }]).map((item) => (
-              <p key={item.browser}>
-                <span>{item.browser}</span>
-                <strong>{item.views}</strong>
-              </p>
-            ))}
-          </div>
+          {insightGroups.map((group) => (
+            <AnalyticsInsightList items={group.items} key={group.title} title={group.title} />
+          ))}
         </div>
         <div className="analytics-notes">
           <p>Useful next metrics: CV download clicks, contact icon clicks, language preference, and visit location by country.</p>
@@ -941,7 +954,7 @@ export default function AdminPage() {
 
           <div className="user-list">
             {users.map((user) => (
-              <article className="editor-card user-row" key={user.id}>
+              <article className={`editor-card user-row ${isRootSuperAdmin(user) ? "is-root-user" : ""}`} key={user.id}>
                 <div className="user-summary">
                   <span>Account</span>
                   <strong>{user.username}</strong>
@@ -954,24 +967,32 @@ export default function AdminPage() {
                 </div>
                 <label>
                   <span>Username</span>
-                  <input
-                    value={getUserUsernameDraft(user)}
-                    onChange={(event) => updateUserUsernameDraft(user.id, event.target.value)}
-                    placeholder="New username"
-                  />
+                  {isRootSuperAdmin(user) ? (
+                    <input aria-label="Root administrator username is locked" disabled value="/" />
+                  ) : (
+                    <input
+                      value={getUserUsernameDraft(user)}
+                      onChange={(event) => updateUserUsernameDraft(user.id, event.target.value)}
+                      placeholder="New username"
+                    />
+                  )}
                 </label>
                 <label>
                   <span>Role</span>
-                  <select
-                    disabled={!currentUserIsRoot && user.role === "super_admin"}
-                    value={user.role}
-                    onChange={(event) => updateUserRoleDraft(user.id, event.target.value as AdminRole)}
-                  >
-                    <option value="admin">Administrator</option>
-                    {(currentUserIsRoot || user.role === "super_admin") && (
-                      <option value="super_admin">Super administrator</option>
-                    )}
-                  </select>
+                  {isRootSuperAdmin(user) ? (
+                    <span className="locked-field">Super administrator</span>
+                  ) : (
+                    <select
+                      disabled={!currentUserIsRoot && user.role === "super_admin"}
+                      value={user.role}
+                      onChange={(event) => updateUserRoleDraft(user.id, event.target.value as AdminRole)}
+                    >
+                      <option value="admin">Administrator</option>
+                      {(currentUserIsRoot || user.role === "super_admin") && (
+                        <option value="super_admin">Super administrator</option>
+                      )}
+                    </select>
+                  )}
                 </label>
                 <label>
                   <span>New password</span>
@@ -979,14 +1000,14 @@ export default function AdminPage() {
                     value={getUserPasswordDraft(user)}
                     onChange={(event) => updateUserPasswordDraft(user.id, event.target.value)}
                     type="password"
-                    placeholder="Leave blank unless resetting"
+                    placeholder="Optional reset password"
                   />
                 </label>
                 <div className="admin-actions">
                   <button
                     className="button secondary"
                     type="button"
-                    disabled={busy || (!currentUserIsRoot && user.role === "super_admin")}
+                    disabled={busy || isRootSuperAdmin(user) || (!currentUserIsRoot && user.role === "super_admin")}
                     onClick={() => updateUser(user, "username", getUserUsernameDraft(user))}
                   >
                     Save name
@@ -994,7 +1015,7 @@ export default function AdminPage() {
                   <button
                     className="button secondary"
                     type="button"
-                    disabled={busy || (!currentUserIsRoot && user.role === "super_admin")}
+                    disabled={busy || isRootSuperAdmin(user) || (!currentUserIsRoot && user.role === "super_admin")}
                     onClick={() => updateUser(user, "role", user.role)}
                   >
                     Save role

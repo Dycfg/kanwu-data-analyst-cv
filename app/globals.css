@@ -1277,6 +1277,14 @@ h3 {
   transform: translateY(-1px);
 }
 
+.editor-card input:disabled,
+.editor-card select:disabled {
+  cursor: not-allowed;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--paper) 78%, white);
+  transform: none;
+}
+
 .editor-card textarea,
 .nested-editor textarea {
   min-height: 96px;
@@ -1335,9 +1343,13 @@ h3 {
 
 .user-row {
   display: grid;
-  grid-template-columns: minmax(160px, 0.65fr) minmax(130px, 0.45fr) minmax(150px, 0.55fr) minmax(220px, 0.62fr) minmax(190px, 0.7fr) minmax(240px, 1fr);
+  grid-template-columns: minmax(160px, 0.65fr) minmax(130px, 0.45fr) minmax(150px, 0.5fr) minmax(220px, 0.62fr) minmax(220px, 0.74fr) minmax(240px, 1fr);
   gap: 12px;
   align-items: end;
+}
+
+.user-row.is-root-user {
+  border-color: color-mix(in srgb, var(--ink) 28%, var(--line));
 }
 
 .user-summary,
@@ -1371,6 +1383,16 @@ h3 {
   color: var(--muted);
   font-size: 13px;
   font-style: normal;
+}
+
+.locked-field {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--paper) 78%, white);
+  padding: 10px 12px;
+  color: var(--muted);
 }
 
 .analytics-panel {
@@ -1640,28 +1662,59 @@ h3 {
 .analytics-lists {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(18px, 3vw, 36px);
+  padding-top: 8px;
+}
+
+.analytics-insight {
+  display: grid;
+  align-content: start;
   gap: 14px;
 }
 
-.analytics-lists > div {
+.analytics-insight > div {
   display: grid;
-  gap: 10px;
+  gap: 13px;
 }
 
-.analytics-lists p:not(.section-label) {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
+.analytics-insight p:not(.section-label) {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px 14px;
   margin: 0;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--line);
+  padding-bottom: 7px;
 }
 
-.analytics-lists span {
+.analytics-insight p:not(.section-label)::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 1px;
+  background: color-mix(in srgb, var(--line) 58%, transparent);
+  content: "";
+}
+
+.analytics-insight span {
   overflow: hidden;
   color: var(--muted);
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.analytics-insight i {
+  grid-column: 1 / -1;
+  display: block;
+  height: 2px;
+  background: var(--ink);
+  transform-origin: left;
+  animation: meter-fill 680ms cubic-bezier(0.2, 0.72, 0.16, 1) both;
+}
+
+.analytics-insight strong {
+  font-size: 16px;
+  line-height: 1;
 }
 
 .analytics-notes {

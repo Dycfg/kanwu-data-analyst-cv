@@ -106,6 +106,9 @@ test("keeps CV and admin upload routes wired", async () => {
   assert.match(adminPage, /Selected point/);
   assert.match(adminPage, /onMouseEnter/);
   assert.match(adminPage, /visitors/);
+  assert.match(adminPage, /AnalyticsInsightList/);
+  assert.match(adminPage, /analytics-insight/);
+  assert.match(adminPage, /insightGroups/);
   assert.match(adminPage, /\/api\/admin\/analytics/);
   assert.match(adminPage, /\/api\/admin\/auth\/me/);
   assert.match(adminPage, /\/api\/admin\/auth\/logout/);
@@ -116,6 +119,9 @@ test("keeps CV and admin upload routes wired", async () => {
   assert.match(adminPage, /Encrypted/);
   assert.match(adminPage, /Reset only/);
   assert.match(adminPage, /New username/);
+  assert.match(adminPage, /Root administrator username is locked/);
+  assert.match(adminPage, /locked-field/);
+  assert.match(adminPage, /Optional reset password/);
   assert.match(adminPage, /currentUserIsRoot/);
   assert.match(adminPage, /window\.alert\("Super administrators cannot be deleted\."/);
   assert.match(adminPage, /Upload \$\{labels\[locale\]\}/);
