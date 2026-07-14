@@ -1250,12 +1250,29 @@ h3 {
   background: var(--paper);
   padding: 10px 12px;
   color: var(--ink);
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
 }
 
 .editor-card select,
 .nested-editor select,
 .admin-key select {
   appearance: none;
+}
+
+.editor-card select:hover,
+.editor-card select:focus-visible,
+.nested-editor select:hover,
+.nested-editor select:focus-visible,
+.admin-key select:hover,
+.admin-key select:focus-visible {
+  border-color: var(--ink);
+  background: color-mix(in srgb, var(--paper) 68%, white);
+  box-shadow: 0 12px 30px color-mix(in srgb, var(--ink) 7%, transparent);
+  transform: translateY(-1px);
 }
 
 .editor-card textarea,
@@ -1495,6 +1512,13 @@ h3 {
   color: var(--ink);
 }
 
+.traffic-grid text {
+  fill: var(--muted);
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  text-anchor: end;
+}
+
 .traffic-grid-line,
 .traffic-baseline {
   stroke: color-mix(in srgb, var(--line) 78%, transparent);
@@ -1562,16 +1586,54 @@ h3 {
   stroke-width: 2;
 }
 
+.traffic-tooltip {
+  pointer-events: none;
+}
+
+.traffic-tooltip rect {
+  fill: color-mix(in srgb, var(--paper) 88%, white);
+  stroke: var(--line);
+}
+
+.traffic-tooltip text {
+  fill: var(--ink);
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.traffic-tooltip text:first-of-type {
+  font-weight: 700;
+}
+
+.traffic-hit-zone {
+  cursor: crosshair;
+  fill: transparent;
+  pointer-events: all;
+}
+
+.traffic-hit-zone:focus-visible {
+  outline: none;
+  stroke: color-mix(in srgb, var(--ink) 34%, transparent);
+  stroke-dasharray: 4 5;
+  stroke-width: 1;
+}
+
 .traffic-axis-labels {
   position: relative;
   z-index: 1;
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
+  min-height: 16px;
   color: var(--muted);
   font-family: var(--font-mono), monospace;
   font-size: 11px;
   text-transform: uppercase;
+}
+
+.traffic-axis-labels span {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  white-space: nowrap;
 }
 
 .analytics-lists {

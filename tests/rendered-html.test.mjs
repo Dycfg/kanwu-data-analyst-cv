@@ -99,6 +99,9 @@ test("keeps CV and admin upload routes wired", async () => {
   assert.match(adminPage, /TrafficVisualization/);
   assert.match(adminPage, /traffic-visual/);
   assert.match(adminPage, /traffic-svg/);
+  assert.match(adminPage, /traffic-grid/);
+  assert.match(adminPage, /traffic-tooltip/);
+  assert.match(adminPage, /traffic-hit-zone/);
   assert.match(adminPage, /Selected point/);
   assert.match(adminPage, /onMouseEnter/);
   assert.match(adminPage, /visitors/);
@@ -111,6 +114,7 @@ test("keeps CV and admin upload routes wired", async () => {
   assert.match(adminPage, /Password is required/);
   assert.match(adminPage, /Encrypted/);
   assert.match(adminPage, /Reset only/);
+  assert.match(adminPage, /New username/);
   assert.match(adminPage, /Upload \$\{labels\[locale\]\}/);
   assert.match(adminPage, /en:\s*"English CV"/);
   assert.match(adminPage, /removeCv/);

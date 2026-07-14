@@ -34,6 +34,10 @@ type AnalyticsSummary = {
 
 type TrafficPeriod = "daily" | "weekly" | "monthly";
 type TrafficItem = { date: string; views: number; visitors: number };
+type DraftedAdminUser = AdminUser & {
+  newPassword?: string;
+  usernameDraft?: string;
+};
 
 const labels = {
   en: "English CV",
@@ -138,7 +142,16 @@ function TrafficVisualization({ period, items }: { period: TrafficPeriod; items:
     : "";
   const activePoint = points[safeActiveIndex]?.views ?? chartPoint(0, 0, 1, 1, width, height, padding);
   const gridLines = [0, 0.25, 0.5, 0.75, 1];
-  const axisLabels = [items[0], items[Math.floor(items.length / 2)], items[items.length - 1]].filter(Boolean);
+  const axisLabelPoints =
+    points.length <= 3
+      ? points
+      : [points[0], points[Math.floor(points.length / 2)], points[points.length - 1]].filter(Boolean);
+  const hitWidth =
+    points.length <= 1
+      ? width - padding.left - padding.right
+      : (width - padding.left - padding.right) / (points.length - 1);
+  const tooltipX = activePoint.x > width - 190 ? activePoint.x - 156 : activePoint.x + 14;
+  const tooltipY = Math.max(18, activePoint.y - 54);
 
   return (
     <div className="traffic-visual" onMouseLeave={() => setActiveIndex(Math.max(0, items.length - 1))}>
@@ -167,16 +180,21 @@ function TrafficVisualization({ period, items }: { period: TrafficPeriod; items:
         </defs>
         {gridLines.map((line) => {
           const y = padding.top + (height - padding.top - padding.bottom) * line;
+          const label = Math.round(maxValue * (1 - line));
 
           return (
-            <line
-              className="traffic-grid-line"
-              key={line}
-              x1={padding.left}
-              x2={width - padding.right}
-              y1={y}
-              y2={y}
-            />
+            <g className="traffic-grid" key={line}>
+              <text x={padding.left - 12} y={y + 4}>
+                {label}
+              </text>
+              <line
+                className="traffic-grid-line"
+                x1={padding.left}
+                x2={width - padding.right}
+                y1={y}
+                y2={y}
+              />
+            </g>
           );
         })}
         <line
@@ -210,10 +228,42 @@ function TrafficVisualization({ period, items }: { period: TrafficPeriod; items:
           <line x1={activePoint.x} x2={activePoint.x} y1={padding.top} y2={height - padding.bottom} />
           <circle cx={activePoint.x} cy={activePoint.y} r="7" />
         </g>
+        <g className="traffic-tooltip" transform={`translate(${tooltipX} ${tooltipY})`}>
+          <rect width="142" height="46" />
+          <text x="12" y="18">{formatTrafficLabel(period, activeItem.date)}</text>
+          <text x="12" y="34">
+            {activeItem.views} views / {activeItem.visitors} visitors
+          </text>
+        </g>
+        {points.map((point, index) => {
+          const x =
+            points.length <= 1
+              ? padding.left
+              : Math.max(padding.left, Math.min(width - padding.right - hitWidth, point.views.x - hitWidth / 2));
+
+          return (
+            <rect
+              aria-label={`${formatTrafficLabel(period, point.item.date)} interaction zone`}
+              className="traffic-hit-zone"
+              height={height - padding.top - padding.bottom}
+              key={`${point.item.date}-zone-${index}`}
+              role="button"
+              tabIndex={0}
+              width={hitWidth}
+              x={x}
+              y={padding.top}
+              onClick={() => setActiveIndex(index)}
+              onFocus={() => setActiveIndex(index)}
+              onMouseEnter={() => setActiveIndex(index)}
+            />
+          );
+        })}
       </svg>
       <div className="traffic-axis-labels" aria-hidden="true">
-        {axisLabels.map((item, index) => (
-          <span key={`${item.date}-${index}`}>{formatTrafficLabel(period, item.date)}</span>
+        {axisLabelPoints.map((point, index) => (
+          <span key={`${point.item.date}-${index}`} style={{ left: `${(point.views.x / width) * 100}%` }}>
+            {formatTrafficLabel(period, point.item.date)}
+          </span>
         ))}
       </div>
     </div>
@@ -384,6 +434,12 @@ export default function AdminPage() {
     setBusy(true);
     setMessage("");
 
+    if (field === "username" && !value.trim()) {
+      setMessage("Enter a new username before saving.");
+      setBusy(false);
+      return;
+    }
+
     try {
       const response = await fetch(`/api/admin/users/${user.id}`, {
         method: "PATCH",
@@ -391,7 +447,7 @@ export default function AdminPage() {
           "content-type": "application/json",
         },
         body: JSON.stringify({
-          username: field === "username" ? value : user.username,
+          username: field === "username" ? value.trim() : user.username,
           role: field === "role" ? value : user.role,
           password: field === "password" ? value : undefined,
         }),
@@ -433,10 +489,10 @@ export default function AdminPage() {
         user.id === id
           ? {
               ...user,
-              username: value,
+              usernameDraft: value,
             }
           : user
-      )
+      ) as AdminUser[]
     );
   }
 
@@ -467,7 +523,11 @@ export default function AdminPage() {
   }
 
   function getUserPasswordDraft(user: AdminUser) {
-    return (user as AdminUser & { newPassword?: string }).newPassword ?? "";
+    return (user as DraftedAdminUser).newPassword ?? "";
+  }
+
+  function getUserUsernameDraft(user: AdminUser) {
+    return (user as DraftedAdminUser).usernameDraft ?? "";
   }
 
   if (!currentUser) {
@@ -885,8 +945,9 @@ export default function AdminPage() {
                 <label>
                   <span>Username</span>
                   <input
-                    value={user.username}
+                    value={getUserUsernameDraft(user)}
                     onChange={(event) => updateUserUsernameDraft(user.id, event.target.value)}
+                    placeholder="New username"
                   />
                 </label>
                 <label>
@@ -913,7 +974,7 @@ export default function AdminPage() {
                     className="button secondary"
                     type="button"
                     disabled={busy}
-                    onClick={() => updateUser(user, "username", user.username)}
+                    onClick={() => updateUser(user, "username", getUserUsernameDraft(user))}
                   >
                     Save name
                   </button>
