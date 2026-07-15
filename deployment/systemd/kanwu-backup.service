@@ -1,0 +1,11 @@
+[Unit]
+Description=Back up KanWu CV site data
+After=network.target
+
+[Service]
+Type=oneshot
+Environment=APP_DIR=/home/ubuntu/kanwu-data-analyst-cv
+Environment=BACKUP_DIR=/home/ubuntu/kanwu-backups
+Environment=SERVICE_NAME=kanwu-cv
+Environment=KEEP_DAYS=14
+ExecStart=/bin/bash /home/ubuntu/kanwu-data-analyst-cv/scripts/backup-data.sh

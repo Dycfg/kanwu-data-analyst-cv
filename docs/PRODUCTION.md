@@ -17,9 +17,13 @@ Run these commands on the server after pushing changes to GitHub:
 ```bash
 cd ~/kanwu-data-analyst-cv
 git pull
+bash scripts/backup-data.sh
 npm install
+npm run lint
+npm test
 npm run build
 sudo systemctl restart kanwu-cv
+sleep 8
 sudo systemctl status kanwu-cv --no-pager
 curl -I http://127.0.0.1:3000
 curl -I https://kanwu.pw
@@ -44,6 +48,31 @@ The script keeps the newest 14 days by default. Override with:
 
 ```bash
 KEEP_DAYS=30 bash scripts/backup-data.sh
+```
+
+## Enable automatic daily backups
+
+Install the systemd timer once on the server:
+
+```bash
+cd ~/kanwu-data-analyst-cv
+bash scripts/install-backup-timer.sh
+```
+
+The timer runs every day around `03:20` server time and keeps 14 days of archives.
+
+Check the timer and the latest run:
+
+```bash
+systemctl list-timers --all | grep kanwu-backup
+sudo journalctl -u kanwu-backup -n 80 --no-pager
+ls -lh ~/kanwu-backups
+```
+
+Run a backup immediately:
+
+```bash
+sudo systemctl start kanwu-backup
 ```
 
 ## Restore a backup

@@ -58,6 +58,9 @@ test("keeps CV and admin upload routes wired", async () => {
     analyticsStore,
     productionDocs,
     backupScript,
+    installBackupTimerScript,
+    backupService,
+    backupTimer,
     hosting,
   ] = await Promise.all([
     readProjectFile("app/cv/page.tsx"),
@@ -80,6 +83,9 @@ test("keeps CV and admin upload routes wired", async () => {
     readProjectFile("app/server/analytics-store.ts"),
     readProjectFile("docs/PRODUCTION.md"),
     readProjectFile("scripts/backup-data.sh"),
+    readProjectFile("scripts/install-backup-timer.sh"),
+    readProjectFile("deployment/systemd/kanwu-backup.service"),
+    readProjectFile("deployment/systemd/kanwu-backup.timer"),
     readProjectFile(".openai/hosting.json"),
   ]);
 
@@ -228,9 +234,16 @@ test("keeps CV and admin upload routes wired", async () => {
   assert.match(productionDocs, /Production runbook/);
   assert.match(productionDocs, /kanwu-cv/);
   assert.match(productionDocs, /scripts\/backup-data\.sh/);
+  assert.match(productionDocs, /scripts\/install-backup-timer\.sh/);
+  assert.match(productionDocs, /systemctl list-timers/);
   assert.match(backupScript, /kanwu-backups/);
   assert.match(backupScript, /systemctl stop/);
   assert.match(backupScript, /\.data \.env/);
+  assert.match(installBackupTimerScript, /kanwu-backup\.timer/);
+  assert.match(installBackupTimerScript, /systemctl enable --now/);
+  assert.match(backupService, /ExecStart=.*scripts\/backup-data\.sh/);
+  assert.match(backupTimer, /OnCalendar=.*03:20:00/);
+  assert.match(backupTimer, /Persistent=true/);
   assert.match(cvApi, /assetPath/);
   assert.match(cvApi, /Response\.redirect/);
   assert.match(hosting, /"d1":\s*"DB"/);

@@ -10,9 +10,17 @@ ARCHIVE="${BACKUP_DIR}/kanwu-data-${STAMP}.tar.gz"
 
 mkdir -p "${BACKUP_DIR}"
 
+run_systemctl() {
+  if [[ "$(id -u)" -eq 0 ]]; then
+    systemctl "$@"
+  else
+    sudo systemctl "$@"
+  fi
+}
+
 if command -v systemctl >/dev/null 2>&1 && systemctl is-active --quiet "${SERVICE_NAME}"; then
-  sudo systemctl stop "${SERVICE_NAME}"
-  trap 'sudo systemctl start "${SERVICE_NAME}" >/dev/null 2>&1 || true' EXIT
+  run_systemctl stop "${SERVICE_NAME}"
+  trap 'run_systemctl start "${SERVICE_NAME}" >/dev/null 2>&1 || true' EXIT
 fi
 
 tar -C "${APP_DIR}" -czf "${ARCHIVE}" .data .env
