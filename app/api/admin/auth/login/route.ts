@@ -1,6 +1,7 @@
 import { getRuntimeEnv } from "../../../../server/runtime-env";
 import {
   bootstrapSuperAdmin,
+  getClientIp,
   loginAdmin,
   type AuthRuntimeEnv,
 } from "../../../../server/auth-store";
@@ -20,10 +21,24 @@ export async function POST(request: Request) {
   await bootstrapSuperAdmin(db, runtime, request);
 
   const payload = (await request.json()) as { username?: string; password?: string };
-  const result = await loginAdmin(db, payload.username ?? "", payload.password ?? "");
+  const result = await loginAdmin(db, payload.username ?? "", payload.password ?? "", {
+    ipAddress: getClientIp(request),
+  });
 
   if (!result) {
     return Response.json({ error: "Invalid username or password." }, { status: 401 });
+  }
+
+  if ("locked" in result) {
+    return Response.json(
+      {
+        error: `Too many failed login attempts. Try again in ${Math.ceil(
+          result.retryAfterSeconds / 60
+        )} minutes.`,
+        retryAfterSeconds: result.retryAfterSeconds,
+      },
+      { status: 429 }
+    );
   }
 
   return Response.json(

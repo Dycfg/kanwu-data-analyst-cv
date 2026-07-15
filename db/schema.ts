@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { index, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const siteContent = sqliteTable("site_content", {
   id: text("id").primaryKey(),
@@ -30,6 +30,22 @@ export const adminSessions = sqliteTable(
   (table) => [
     index("admin_sessions_user_id_idx").on(table.userId),
     index("admin_sessions_expires_at_idx").on(table.expiresAt),
+  ]
+);
+
+export const adminLoginAttempts = sqliteTable(
+  "admin_login_attempts",
+  {
+    id: text("id").primaryKey(),
+    username: text("username").notNull(),
+    ipAddress: text("ip_address").notNull(),
+    failedCount: integer("failed_count").notNull().default(0),
+    lockedUntil: text("locked_until"),
+    lastFailedAt: text("last_failed_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    index("admin_login_attempts_locked_until_idx").on(table.lockedUntil),
+    index("admin_login_attempts_username_idx").on(table.username),
   ]
 );
 

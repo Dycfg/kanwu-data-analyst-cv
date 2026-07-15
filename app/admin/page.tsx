@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import {
   defaultSiteContent,
@@ -377,6 +378,7 @@ export default function AdminPage() {
   }
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     refreshMe()
       .then((user) =>
         Promise.all([
@@ -391,6 +393,7 @@ export default function AdminPage() {
           setMessage(error.message);
         }
       });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function logout() {
@@ -816,8 +819,8 @@ export default function AdminPage() {
   return (
     <main className="admin-page">
       <header className="subpage-header">
-        <a href="/">Back to site</a>
-        <a href="/cv">View CV</a>
+        <Link href="/">Back to site</Link>
+        <Link href="/cv">View CV</Link>
         <button className="text-action" type="button" onClick={logout}>
           Sign out
         </button>

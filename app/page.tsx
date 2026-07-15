@@ -25,8 +25,16 @@ function SectionLabel({ index, label }: { index: string; label: string }) {
   );
 }
 
+function getInitialLang(): Lang {
+  if (typeof window === "undefined") {
+    return "en";
+  }
+
+  return new URLSearchParams(window.location.search).get("lang") === "zh" ? "zh" : "en";
+}
+
 export default function Home() {
-  const [lang, setLang] = useState<Lang>("en");
+  const [lang, setLang] = useState<Lang>(() => getInitialLang());
   const [siteContent, setSiteContent] = useState<SiteContent>(defaultSiteContent);
   const [copied, setCopied] = useState(false);
   const t = siteContent[lang];
@@ -72,12 +80,6 @@ export default function Home() {
           ["后端支持", "3,000+ 数据", "GIS 数据"],
           ["统计建模", "线性混合模型", "空间分析"],
         ];
-
-  useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("lang") === "zh") {
-      setLang("zh");
-    }
-  }, []);
 
   useEffect(() => {
     fetch("/api/content", { cache: "no-store" })
@@ -301,6 +303,7 @@ export default function Home() {
         <div className="cv-action-stack">
           <a className="cv-mini-preview" href={cvHref} aria-label={t.cvButton}>
             <span>{lang === "en" ? "Current PDF" : "当前 PDF"}</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={cvPreview} alt="" />
           </a>
           <a className="button primary" href={cvHref}>

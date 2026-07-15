@@ -45,13 +45,9 @@ function getInitialLang(): Lang {
 }
 
 export default function CvPage() {
-  const [lang, setLang] = useState<Lang>("en");
+  const [lang, setLang] = useState<Lang>(() => getInitialLang());
   const t = copy[lang];
   const cvUrl = useMemo(() => `/api/cv/${lang}`, [lang]);
-
-  useEffect(() => {
-    setLang(getInitialLang());
-  }, []);
 
   useEffect(() => {
     trackEvent("page_view");
@@ -110,6 +106,7 @@ export default function CvPage() {
             <span>{lang === "en" ? "Preview" : "预览"}</span>
             <span>{lang === "en" ? "Open PDF" : "打开 PDF"}</span>
           </span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img key={lang} src={previewByLang[lang]} alt={`${t.title} preview`} />
         </a>
       </section>

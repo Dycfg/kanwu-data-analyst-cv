@@ -56,6 +56,8 @@ test("keeps CV and admin upload routes wired", async () => {
     analyticsApi,
     analyticsTrackApi,
     analyticsStore,
+    productionDocs,
+    backupScript,
     hosting,
   ] = await Promise.all([
     readProjectFile("app/cv/page.tsx"),
@@ -76,6 +78,8 @@ test("keeps CV and admin upload routes wired", async () => {
     readProjectFile("app/api/admin/analytics/route.ts"),
     readProjectFile("app/api/analytics/track/route.ts"),
     readProjectFile("app/server/analytics-store.ts"),
+    readProjectFile("docs/PRODUCTION.md"),
+    readProjectFile("scripts/backup-data.sh"),
     readProjectFile(".openai/hosting.json"),
   ]);
 
@@ -168,6 +172,10 @@ test("keeps CV and admin upload routes wired", async () => {
   assert.match(adminContentApi, /writeSiteContent/);
   assert.match(adminContentApi, /export async function PUT/);
   assert.match(loginApi, /bootstrapSuperAdmin/);
+  assert.match(loginApi, /getClientIp/);
+  assert.match(loginApi, /retryAfterSeconds/);
+  assert.match(loginApi, /Too many failed login attempts/);
+  assert.match(loginApi, /status:\s*429/);
   assert.match(loginApi, /Set-Cookie/);
   assert.match(usersApi, /requireSuperAdmin/);
   assert.match(usersApi, /createAdminUser/);
@@ -182,6 +190,11 @@ test("keeps CV and admin upload routes wired", async () => {
   assert.match(auditStore, /readAuditLogs/);
   assert.match(authStore, /admin_users/);
   assert.match(authStore, /admin_sessions/);
+  assert.match(authStore, /admin_login_attempts/);
+  assert.match(authStore, /maxFailedLoginAttempts = 5/);
+  assert.match(authStore, /loginLockMinutes = 10/);
+  assert.match(authStore, /recordFailedLoginAttempt/);
+  assert.match(authStore, /clearLoginAttempt/);
   assert.match(authStore, /PBKDF2/);
   assert.match(authStore, /password_hash/);
   assert.match(authStore, /rootAdminUsername = "admin"/);
@@ -212,6 +225,12 @@ test("keeps CV and admin upload routes wired", async () => {
   assert.match(analyticsStore, /strftime\('%Y-W%W'/);
   assert.match(analyticsStore, /-84 days/);
   assert.match(analyticsStore, /COUNT\(DISTINCT visitor_hash\)/);
+  assert.match(productionDocs, /Production runbook/);
+  assert.match(productionDocs, /kanwu-cv/);
+  assert.match(productionDocs, /scripts\/backup-data\.sh/);
+  assert.match(backupScript, /kanwu-backups/);
+  assert.match(backupScript, /systemctl stop/);
+  assert.match(backupScript, /\.data \.env/);
   assert.match(cvApi, /assetPath/);
   assert.match(cvApi, /Response\.redirect/);
   assert.match(hosting, /"d1":\s*"DB"/);
@@ -219,7 +238,16 @@ test("keeps CV and admin upload routes wired", async () => {
 });
 
 test("declares editable default content and D1 migration", async () => {
-  const [content, schema, contentMigration, authMigration, indexMigration, trafficMigration, auditMigration] = await Promise.all([
+  const [
+    content,
+    schema,
+    contentMigration,
+    authMigration,
+    indexMigration,
+    trafficMigration,
+    auditMigration,
+    loginAttemptMigration,
+  ] = await Promise.all([
     readProjectFile("app/site-content.ts"),
     readProjectFile("db/schema.ts"),
     readProjectFile("drizzle/0000_tiresome_mattie_franklin.sql"),
@@ -227,6 +255,7 @@ test("declares editable default content and D1 migration", async () => {
     readProjectFile("drizzle/0002_curly_midnight.sql"),
     readProjectFile("drizzle/0003_big_the_professor.sql"),
     readProjectFile("drizzle/0004_classy_maelstrom.sql"),
+    readProjectFile("drizzle/0005_lock_login_attempts.sql"),
   ]);
 
   assert.match(content, /defaultSiteContent/);
@@ -235,6 +264,7 @@ test("declares editable default content and D1 migration", async () => {
   assert.match(schema, /siteContent/);
   assert.match(schema, /adminUsers/);
   assert.match(schema, /adminSessions/);
+  assert.match(schema, /adminLoginAttempts/);
   assert.match(schema, /trafficEvents/);
   assert.match(schema, /adminAuditLogs/);
   assert.match(contentMigration, /CREATE TABLE `site_content`/);
@@ -248,6 +278,9 @@ test("declares editable default content and D1 migration", async () => {
   assert.match(auditMigration, /CREATE TABLE `admin_audit_logs`/);
   assert.match(auditMigration, /ALTER TABLE `traffic_events` ADD `event_type`/);
   assert.match(auditMigration, /traffic_events_event_type_idx/);
+  assert.match(loginAttemptMigration, /CREATE TABLE `admin_login_attempts`/);
+  assert.match(loginAttemptMigration, /admin_login_attempts_locked_until_idx/);
+  assert.match(loginAttemptMigration, /admin_login_attempts_username_idx/);
 });
 
 test("includes default English and Chinese CV PDFs", async () => {

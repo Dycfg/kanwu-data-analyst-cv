@@ -43,8 +43,8 @@ async function readCloudflareEnv() {
     const importCloudflare = new Function("specifier", "return import(specifier)") as (
       specifier: string
     ) => Promise<{ env?: unknown }>;
-    const module = await importCloudflare("cloudflare:workers");
-    return module.env ?? null;
+    const cloudflareModule = await importCloudflare("cloudflare:workers");
+    return cloudflareModule.env ?? null;
   } catch {
     return null;
   }

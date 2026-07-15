@@ -1,6 +1,7 @@
 "use client";
 
 import { Eye, EyeOff } from "lucide-react";
+import Link from "next/link";
 import { FormEvent, useState } from "react";
 
 export default function AdminLoginPage() {
@@ -40,7 +41,7 @@ export default function AdminLoginPage() {
   return (
     <main className="admin-page login-page">
       <header className="subpage-header">
-        <a href="/">Back to site</a>
+        <Link href="/">Back to site</Link>
       </header>
 
       <section className="admin-hero login-hero">

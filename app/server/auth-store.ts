@@ -19,18 +19,35 @@ const passwordAlgorithm = "pbkdf2_sha256";
 const passwordIterations = 210_000;
 const sessionDays = 7;
 const rootAdminUsername = "admin";
+const maxFailedLoginAttempts = 5;
+const loginLockMinutes = 10;
 
 type AdminUserRow = AdminUser & {
   passwordHash: string;
 };
 
-type SessionRow = {
+type LoginAttemptRow = {
   id: string;
-  userId: string;
-  tokenHash: string;
-  expiresAt: string;
-  createdAt: string;
+  username: string;
+  ipAddress: string;
+  failedCount: number;
+  lockedUntil: string | null;
+  lastFailedAt: string;
 };
+
+type LoginContext = {
+  ipAddress?: string;
+};
+
+type LoginResult =
+  | {
+      user: AdminUser;
+      cookie: string;
+    }
+  | {
+      locked: true;
+      retryAfterSeconds: number;
+    };
 
 export function sessionCookieDelete() {
   return `${sessionCookieName}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`;
@@ -49,6 +66,15 @@ export async function ensureAuthTables(db: D1Database) {
     ),
     db.prepare(
       "CREATE INDEX IF NOT EXISTS admin_sessions_expires_at_idx ON admin_sessions(expires_at)"
+    ),
+    db.prepare(
+      "CREATE TABLE IF NOT EXISTS admin_login_attempts (id TEXT PRIMARY KEY, username TEXT NOT NULL, ip_address TEXT NOT NULL, failed_count INTEGER NOT NULL DEFAULT 0, locked_until TEXT, last_failed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)"
+    ),
+    db.prepare(
+      "CREATE INDEX IF NOT EXISTS admin_login_attempts_locked_until_idx ON admin_login_attempts(locked_until)"
+    ),
+    db.prepare(
+      "CREATE INDEX IF NOT EXISTS admin_login_attempts_username_idx ON admin_login_attempts(username)"
     ),
   ]);
 }
@@ -82,9 +108,18 @@ export async function bootstrapSuperAdmin(db: D1Database, env: AuthRuntimeEnv, r
 export async function loginAdmin(
   db: D1Database,
   username: string,
-  password: string
-) {
+  password: string,
+  context: LoginContext = {}
+): Promise<LoginResult | null> {
   await ensureAuthTables(db);
+
+  const loginKey = await loginAttemptKey(username, context.ipAddress);
+  const existingAttempt = await getLoginAttempt(db, loginKey);
+  const lockSeconds = secondsUntilUnlock(existingAttempt?.lockedUntil ?? null);
+
+  if (lockSeconds > 0) {
+    return { locked: true, retryAfterSeconds: lockSeconds };
+  }
 
   const row = await db
     .prepare(
@@ -94,8 +129,11 @@ export async function loginAdmin(
     .first<AdminUserRow>();
 
   if (!row || !(await verifyPassword(password, row.passwordHash))) {
+    await recordFailedLoginAttempt(db, loginKey, username, context.ipAddress);
     return null;
   }
+
+  await clearLoginAttempt(db, loginKey);
 
   const token = randomToken(32);
   const tokenHash = await sha256Hex(token);
@@ -349,6 +387,14 @@ export function isRootSuperAdmin(user: Pick<AdminUser, "username" | "role">) {
   return user.username === rootAdminUsername && user.role === "super_admin";
 }
 
+export function getClientIp(request: Request) {
+  const realIp = request.headers.get("x-real-ip")?.trim();
+  const cfIp = request.headers.get("cf-connecting-ip")?.trim();
+  const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+
+  return realIp || cfIp || forwardedFor || "unknown";
+}
+
 function toPublicUser(row: AdminUserRow | AdminUser): AdminUser {
   return {
     id: row.id,
@@ -381,6 +427,66 @@ function validateUsername(username: string) {
   }
 
   return value;
+}
+
+async function getLoginAttempt(db: D1Database, id: string) {
+  return db
+    .prepare(
+      "SELECT id, username, ip_address AS ipAddress, failed_count AS failedCount, locked_until AS lockedUntil, last_failed_at AS lastFailedAt FROM admin_login_attempts WHERE id = ?"
+    )
+    .bind(id)
+    .first<LoginAttemptRow>();
+}
+
+async function recordFailedLoginAttempt(
+  db: D1Database,
+  id: string,
+  username: string,
+  ipAddress = "unknown"
+) {
+  const existing = await getLoginAttempt(db, id);
+  const failedCount = (existing?.failedCount ?? 0) + 1;
+  const lockedUntil =
+    failedCount >= maxFailedLoginAttempts
+      ? new Date(Date.now() + loginLockMinutes * 60 * 1000).toISOString()
+      : null;
+
+  if (existing) {
+    await db
+      .prepare(
+        "UPDATE admin_login_attempts SET failed_count = ?, locked_until = ?, last_failed_at = CURRENT_TIMESTAMP WHERE id = ?"
+      )
+      .bind(failedCount, lockedUntil, id)
+      .run();
+    return;
+  }
+
+  await db
+    .prepare(
+      "INSERT INTO admin_login_attempts (id, username, ip_address, failed_count, locked_until, last_failed_at) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)"
+    )
+    .bind(id, normalizeLoginUsername(username), ipAddress || "unknown", failedCount, lockedUntil)
+    .run();
+}
+
+async function clearLoginAttempt(db: D1Database, id: string) {
+  await db.prepare("DELETE FROM admin_login_attempts WHERE id = ?").bind(id).run();
+}
+
+async function loginAttemptKey(username: string, ipAddress = "unknown") {
+  return sha256Hex(`${normalizeLoginUsername(username)}|${ipAddress || "unknown"}`);
+}
+
+function normalizeLoginUsername(username: string) {
+  return username.trim().toLowerCase() || "unknown";
+}
+
+function secondsUntilUnlock(lockedUntil: string | null) {
+  if (!lockedUntil) {
+    return 0;
+  }
+
+  return Math.max(0, Math.ceil((new Date(lockedUntil).getTime() - Date.now()) / 1000));
 }
 
 function validatePassword(password: string) {
