@@ -1,4 +1,4 @@
-import { env } from "cloudflare:workers";
+import { getRuntimeEnv } from "../../../server/runtime-env";
 import {
   normalizeSiteContent,
   readSiteContent,
@@ -11,24 +11,25 @@ import type { SiteContent } from "../../../site-content";
 
 type RuntimeEnv = ContentRuntimeEnv & AuthRuntimeEnv & AuditRuntimeEnv;
 
-function runtimeEnv() {
-  return env as unknown as RuntimeEnv;
+async function runtimeEnv() {
+  return (await getRuntimeEnv()) as unknown as RuntimeEnv;
 }
 
 export async function GET(request: Request) {
-  const auth = await requireAdminUser(runtimeEnv().DB, request);
+  const runtime = await runtimeEnv();
+  const auth = await requireAdminUser(runtime.DB, request);
 
   if ("response" in auth) {
     return auth.response;
   }
 
-  const { content, source } = await readSiteContent(runtimeEnv().DB);
+  const { content, source } = await readSiteContent(runtime.DB);
 
   return Response.json({ content, source });
 }
 
 export async function PUT(request: Request) {
-  const db = runtimeEnv().DB;
+  const db = (await runtimeEnv()).DB;
 
   if (!db) {
     return Response.json(

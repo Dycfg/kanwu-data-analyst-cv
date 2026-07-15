@@ -1,4 +1,4 @@
-import { env } from "cloudflare:workers";
+import { getRuntimeEnv } from "../../../server/runtime-env";
 import {
   changeOwnPassword,
   requireAdminUser,
@@ -6,12 +6,12 @@ import {
 } from "../../../server/auth-store";
 import { writeAuditLog, type AuditRuntimeEnv } from "../../../server/audit-log-store";
 
-function runtimeEnv() {
-  return env as unknown as AuthRuntimeEnv & AuditRuntimeEnv;
+async function runtimeEnv() {
+  return (await getRuntimeEnv()) as unknown as AuthRuntimeEnv & AuditRuntimeEnv;
 }
 
 export async function PATCH(request: Request) {
-  const db = runtimeEnv().DB;
+  const db = (await runtimeEnv()).DB;
 
   if (!db) {
     return Response.json({ error: "Login database is not configured." }, { status: 503 });

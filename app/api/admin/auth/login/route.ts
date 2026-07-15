@@ -1,16 +1,16 @@
-import { env } from "cloudflare:workers";
+import { getRuntimeEnv } from "../../../../server/runtime-env";
 import {
   bootstrapSuperAdmin,
   loginAdmin,
   type AuthRuntimeEnv,
 } from "../../../../server/auth-store";
 
-function runtimeEnv() {
-  return env as unknown as AuthRuntimeEnv;
+async function runtimeEnv() {
+  return (await getRuntimeEnv()) as unknown as AuthRuntimeEnv;
 }
 
 export async function POST(request: Request) {
-  const runtime = runtimeEnv();
+  const runtime = await runtimeEnv();
   const db = runtime.DB;
 
   if (!db) {

@@ -1,4 +1,4 @@
-import { env } from "cloudflare:workers";
+import { getRuntimeEnv } from "../../../server/runtime-env";
 import {
   createAdminUser,
   listAdminUsers,
@@ -10,12 +10,12 @@ import { writeAuditLog, type AuditRuntimeEnv } from "../../../server/audit-log-s
 
 type RuntimeEnv = AuthRuntimeEnv & AuditRuntimeEnv;
 
-function runtimeEnv() {
-  return env as unknown as RuntimeEnv;
+async function runtimeEnv() {
+  return (await getRuntimeEnv()) as unknown as RuntimeEnv;
 }
 
 export async function GET(request: Request) {
-  const db = runtimeEnv().DB;
+  const db = (await runtimeEnv()).DB;
 
   if (!db) {
     return Response.json({ error: "Login database is not configured." }, { status: 503 });
@@ -31,7 +31,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const db = runtimeEnv().DB;
+  const db = (await runtimeEnv()).DB;
 
   if (!db) {
     return Response.json({ error: "Login database is not configured." }, { status: 503 });

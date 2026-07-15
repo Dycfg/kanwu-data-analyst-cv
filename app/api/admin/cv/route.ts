@@ -1,4 +1,4 @@
-import { env } from "cloudflare:workers";
+import { getRuntimeEnv } from "../../../server/runtime-env";
 import { requireAdminUser, type AuthRuntimeEnv } from "../../../server/auth-store";
 import { writeAuditLog, type AuditRuntimeEnv } from "../../../server/audit-log-store";
 
@@ -16,8 +16,8 @@ const fileByLocale: Record<Locale, { key: string; label: string }> = {
   zh: { key: "cv/CV_CN.pdf", label: "Chinese CV" },
 };
 
-function runtimeEnv() {
-  return env as unknown as RuntimeEnv;
+async function runtimeEnv() {
+  return (await getRuntimeEnv()) as unknown as RuntimeEnv;
 }
 
 function normalizeLocale(value: FormDataEntryValue | null): Locale | null {
@@ -42,13 +42,14 @@ async function fileStatus(bucket: R2Bucket | undefined, locale: Locale) {
 }
 
 export async function GET(request: Request) {
-  const auth = await requireAdminUser(runtimeEnv().DB, request);
+  const runtime = await runtimeEnv();
+  const auth = await requireAdminUser(runtime.DB, request);
 
   if ("response" in auth) {
     return auth.response;
   }
 
-  const bucket = runtimeEnv().CV_BUCKET;
+  const bucket = runtime.CV_BUCKET;
 
   return Response.json({
     en: await fileStatus(bucket, "en"),
@@ -57,9 +58,10 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const bucket = runtimeEnv().CV_BUCKET;
+  const runtime = await runtimeEnv();
+  const bucket = runtime.CV_BUCKET;
 
-  const auth = await requireAdminUser(runtimeEnv().DB, request);
+  const auth = await requireAdminUser(runtime.DB, request);
 
   if ("response" in auth) {
     return auth.response;
@@ -106,7 +108,7 @@ export async function POST(request: Request) {
       originalName: file.name,
     },
   });
-  await writeAuditLog(runtimeEnv().DB, {
+  await writeAuditLog(runtime.DB, {
     actor: auth.user,
     action: "cv.uploaded",
     targetType: "cv",
@@ -122,9 +124,10 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const bucket = runtimeEnv().CV_BUCKET;
+  const runtime = await runtimeEnv();
+  const bucket = runtime.CV_BUCKET;
 
-  const auth = await requireAdminUser(runtimeEnv().DB, request);
+  const auth = await requireAdminUser(runtime.DB, request);
 
   if ("response" in auth) {
     return auth.response;
@@ -145,7 +148,7 @@ export async function DELETE(request: Request) {
   }
 
   await bucket.delete(fileByLocale[locale].key);
-  await writeAuditLog(runtimeEnv().DB, {
+  await writeAuditLog(runtime.DB, {
     actor: auth.user,
     action: "cv.removed",
     targetType: "cv",

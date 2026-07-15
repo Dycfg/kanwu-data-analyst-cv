@@ -1,16 +1,17 @@
-import { env } from "cloudflare:workers";
+import { getRuntimeEnv } from "../../../../server/runtime-env";
 import {
   logoutAdmin,
   sessionCookieDelete,
   type AuthRuntimeEnv,
 } from "../../../../server/auth-store";
 
-function runtimeEnv() {
-  return env as unknown as AuthRuntimeEnv;
+async function runtimeEnv() {
+  return (await getRuntimeEnv()) as unknown as AuthRuntimeEnv;
 }
 
 export async function POST(request: Request) {
-  await logoutAdmin(runtimeEnv().DB, request);
+  const runtime = await runtimeEnv();
+  await logoutAdmin(runtime.DB, request);
 
   return Response.json(
     { message: "Logged out." },

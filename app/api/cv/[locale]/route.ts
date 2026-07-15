@@ -1,4 +1,4 @@
-import { env } from "cloudflare:workers";
+import { getRuntimeEnv } from "../../../server/runtime-env";
 
 type Locale = "en" | "zh";
 
@@ -22,7 +22,7 @@ export async function GET(
   const params = await context.params;
   const locale = normalizeLocale(params.locale);
   const target = fileByLocale[locale];
-  const runtime = env as unknown as RuntimeEnv;
+  const runtime = (await getRuntimeEnv()) as unknown as RuntimeEnv;
   const bucket = runtime.CV_BUCKET;
 
   if (bucket) {
